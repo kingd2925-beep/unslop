@@ -1,0 +1,2332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>unslop · make any AI-generated website editable</title>
+  <meta name="description" content="Drop in the HTML your AI made and edit it like a document: text, fonts, colours, images and pages. Runs entirely in your browser.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%237c3aed'/%3E%3Cpath d='M18 20v14a14 14 0 0 0 28 0V20' fill='none' stroke='white' stroke-width='7' stroke-linecap='round'/%3E%3C/svg%3E">
+  <style>
+:root {
+  --bg: #f6f5f2;
+  --panel: #ffffff;
+  --ink: #1c1b22;
+  --muted: #6c6a75;
+  --line: #e6e3dc;
+  --accent: #6d28d9;
+  --accent-ink: #ffffff;
+  --accent-soft: #efe9fb;
+  --warn: #b45309;
+  --danger: #b91c1c;
+  --ok: #047857;
+  --stage: #e9e7e1;
+  --radius: 10px;
+  --topbar-h: 56px;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color: var(--ink);
+  background: var(--bg);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #16151a;
+    --panel: #1f1e25;
+    --ink: #ece9f3;
+    --muted: #a19eab;
+    --line: #34323c;
+    --accent: #a78bfa;
+    --accent-ink: #16151a;
+    --accent-soft: #2c2640;
+    --stage: #0f0e12;
+  }
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--bg); }
+body { display: flex; flex-direction: column; }
+[hidden] { display: none !important; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+button, .ghost, select, input, textarea { font: inherit; color: inherit; }
+button, .ghost {
+  border: 1px solid var(--line); background: var(--panel); border-radius: 8px;
+  padding: 6px 12px; cursor: pointer; text-decoration: none; line-height: 1.3;
+}
+button:hover:not(:disabled), .ghost:hover { border-color: var(--accent); }
+button:disabled { opacity: 0.45; cursor: not-allowed; }
+button:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+button.danger { color: var(--danger); }
+button.active, [aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); }
+.link-button { border: 0; background: none; color: var(--accent); padding: 4px 0; }
+.ghost { border-color: transparent; background: transparent; }
+
+.topbar {
+  height: var(--topbar-h); display: flex; align-items: center; gap: 16px; padding: 0 16px;
+  background: var(--panel); border-bottom: 1px solid var(--line); flex-shrink: 0;
+}
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 18px; color: var(--ink); text-decoration: none; }
+.brand-mark { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 8px; background: var(--accent); color: var(--accent-ink); }
+.toolbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; overflow-x: auto; flex: 1; }
+.group { display: flex; gap: 4px; }
+.segmented button { border-radius: 0; margin-left: -1px; }
+.segmented button:first-child { border-radius: 8px 0 0 8px; }
+.segmented button:last-child { border-radius: 0 8px 8px 0; }
+.github { margin-left: auto; }
+
+.hint {
+  display: flex; gap: 12px; align-items: center; justify-content: space-between;
+  padding: 8px 16px; background: var(--accent-soft); border-bottom: 1px solid var(--line); font-size: 14px;
+}
+.hint button { border: 0; background: none; font-size: 18px; }
+
+.workspace { flex: 1; display: grid; grid-template-columns: 260px 1fr 300px; min-height: 0; }
+body:not(.has-project) .workspace { grid-template-columns: 1fr; }
+body:not(.has-project) .project-only { display: none !important; }
+
+.sidebar { background: var(--panel); overflow-y: auto; padding: 16px; min-height: 0; }
+.sidebar.left { border-right: 1px solid var(--line); }
+.sidebar.right { border-left: 1px solid var(--line); }
+.sidebar h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 18px 0 8px; }
+.sidebar h3 { font-size: 13px; margin: 14px 0 8px; }
+.sidebar section:first-child h2 { margin-top: 0; }
+
+.pages-list, .section-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; }
+.pages-list li, .section-list li { min-width: 0; }
+.pages-list li { display: flex; gap: 4px; }
+.page-link { flex: 1; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pages-list li.active .page-link { background: var(--accent-soft); border-color: var(--accent); font-weight: 600; }
+.icon { padding: 4px 9px; }
+.section-list button { width: 100%; text-align: left; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.section-list button.is-hidden { color: var(--warn); border-style: dashed; }
+
+.swatches { display: flex; flex-wrap: wrap; gap: 8px; }
+.swatch { position: relative; width: 32px; height: 32px; cursor: pointer; }
+.swatch-chip { display: block; width: 100%; height: 100%; border-radius: 8px; border: 1px solid var(--line); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.35); }
+.swatch-input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.font-row select { width: 100%; margin-bottom: 6px; }
+.brand-host { padding: 10px; margin-bottom: 10px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--accent-soft); display: grid; gap: 8px; }
+.brand-host h3 { margin: 0; }
+.brand-card { display: grid; gap: 6px; }
+.brand-chips { display: flex; gap: 6px; }
+.small-chip { width: 24px; height: 24px; border-radius: 6px; }
+.brand-dialog .field-row { grid-template-columns: repeat(2, 1fr); }
+
+.stage { position: relative; overflow: auto; background: var(--stage); display: flex; justify-content: center; padding: 20px; min-height: 0; --canvas-width: 100%; }
+.canvas-frame { width: var(--canvas-width); max-width: 100%; height: 100%; min-height: 480px; border: 0; background: #ffffff; border-radius: 6px; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12); transition: width 0.2s ease; }
+.stage.busy::after { content: 'Loading page…'; position: absolute; top: 28px; left: 50%; transform: translateX(-50%); background: var(--panel); padding: 6px 14px; border-radius: 999px; font-size: 13px; }
+
+.welcome { max-width: 760px; margin: 5vh auto; text-align: center; padding: 0 8px; }
+.welcome h1 { font-size: clamp(30px, 5vw, 48px); line-height: 1.1; margin: 0 0 16px; letter-spacing: -0.02em; }
+.lead { font-size: 18px; color: var(--muted); margin: 0 auto 28px; max-width: 620px; }
+.dropzone { border: 2px dashed var(--accent); border-radius: 16px; padding: 32px 20px; background: var(--panel); }
+.dropzone-title { font-weight: 600; margin: 0 0 16px; }
+.steps { text-align: left; max-width: 520px; margin: 28px auto 0; color: var(--muted); line-height: 1.8; }
+.privacy { margin-top: 20px; font-size: 14px; color: var(--muted); }
+
+.button-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.button-row.center { justify-content: center; }
+.button-row.end { justify-content: flex-end; }
+
+.inspector-head { display: grid; gap: 10px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+.inspector-head .button-row button { padding: 4px 8px; font-size: 13px; }
+.panel-section { padding: 4px 0 12px; border-bottom: 1px solid var(--line); }
+.field { display: grid; gap: 4px; margin-bottom: 10px; font-size: 13px; }
+.field-label { color: var(--muted); }
+.field-hint { font-size: 12px; color: var(--muted); }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.field input[type="text"], .field input[type="url"], .field input[type="number"], .field select { width: 100%; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
+.field input[type="color"] { width: 100%; height: 34px; border: 1px solid var(--line); border-radius: 8px; padding: 2px; background: var(--panel); }
+.inline { display: flex; gap: 6px; align-items: center; }
+.check { display: flex; gap: 8px; align-items: center; font-size: 13px; margin: 6px 0; }
+.reveal { font-weight: 600; }
+.empty-note { color: var(--ink); font-size: 14px; }
+.muted { color: var(--muted); }
+.small { font-size: 12px; }
+
+.drop-overlay { position: fixed; inset: 0; background: rgba(109, 40, 217, 0.18); border: 4px dashed var(--accent); display: grid; place-items: center; z-index: 50; pointer-events: none; }
+.drop-overlay p { background: var(--panel); padding: 14px 26px; border-radius: 999px; font-weight: 700; font-size: 20px; }
+
+.toasts { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); display: grid; gap: 8px; z-index: 60; width: min(560px, calc(100% - 32px)); }
+.toast { background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 10px; font-size: 14px; box-shadow: 0 6px 24px rgba(0, 0, 0, 0.2); }
+.toast-warn { background: var(--warn); color: #ffffff; }
+.toast-error { background: var(--danger); color: #ffffff; }
+.toast-success { background: var(--ok); color: #ffffff; }
+
+dialog { border: 1px solid var(--line); border-radius: 14px; padding: 22px; width: min(720px, calc(100% - 32px)); background: var(--panel); color: var(--ink); }
+dialog::backdrop { background: rgba(0, 0, 0, 0.4); }
+dialog h2 { margin-top: 0; }
+dialog textarea { width: 100%; font-family: ui-monospace, Menlo, monospace; font-size: 13px; border: 1px solid var(--line); border-radius: 8px; padding: 10px; background: var(--bg); margin-bottom: 12px; }
+.noscript { padding: 24px; text-align: center; }
+
+@media (max-width: 1000px) {
+  .workspace { grid-template-columns: 1fr; grid-auto-rows: min-content; overflow-y: auto; }
+  .stage { order: -1; height: 70vh; }
+  .sidebar.left, .sidebar.right { border: 0; border-top: 1px solid var(--line); }
+  .topbar { height: auto; padding: 8px 16px; flex-wrap: wrap; }
+}
+</style>
+</head>
+<body data-mode="edit">
+  <header class="topbar">
+    <a class="brand" href="./" aria-label="unslop home"><span class="brand-mark" aria-hidden="true">u</span> unslop</a>
+    <div class="toolbar" role="toolbar" aria-label="Editor tools">
+      <div class="group">
+        <button type="button" data-action="open-files" title="Open HTML files (also CSS, JS and images next to them)">Open</button>
+        <button type="button" data-action="open-folder" title="Open a whole website folder">Folder</button>
+        <button type="button" data-action="paste" title="Paste HTML code">Paste</button>
+      </div>
+      <div class="group segmented project-only" role="group" aria-label="Mode">
+        <button type="button" data-mode="edit" aria-pressed="true" title="Click things to change them">Edit</button>
+        <button type="button" data-mode="preview" aria-pressed="false" title="Use the site like a visitor. Links switch pages.">Preview</button>
+      </div>
+      <div class="group segmented project-only" role="group" aria-label="Screen size">
+        <button type="button" data-device="desktop" aria-pressed="true" title="Desktop width">Desktop</button>
+        <button type="button" data-device="tablet" aria-pressed="false" title="Tablet width">Tablet</button>
+        <button type="button" data-device="mobile" aria-pressed="false" title="Phone width">Phone</button>
+      </div>
+      <div class="group project-only">
+        <button type="button" id="undo" title="Undo (Ctrl/Cmd + Z)" disabled>↶ Undo</button>
+        <button type="button" id="redo" title="Redo (Ctrl/Cmd + Shift + Z)" disabled>↷ Redo</button>
+      </div>
+      <div class="group project-only">
+        <button type="button" id="export-page" class="primary" title="Download this page (Ctrl/Cmd + S)">Download page</button>
+        <button type="button" id="export-all" title="Download every page (a .zip when there are several)">All pages</button>
+        <button type="button" id="copy-html" title="Copy this page's HTML">Copy HTML</button>
+      </div>
+      <button type="button" id="hint-show" class="ghost" title="Show tips">?</button>
+      <a class="ghost github" href="https://github.com/" id="github-link" target="_blank" rel="noopener">GitHub</a>
+    </div>
+  </header>
+
+  <div id="hint" class="hint" role="note">
+    <span><b>Switching pages:</b> click <b>Preview</b>, click the page link on your site, then click <b>Edit</b> to change that page.
+    Several pages inside one file (tabs, steps)? Turn on <b>Show hidden parts</b> on the left.</span>
+    <button type="button" id="hint-close" aria-label="Hide this tip">×</button>
+  </div>
+
+  <main class="workspace">
+    <aside class="sidebar left project-only" aria-label="Pages and theme">
+      <section>
+        <h2>Pages</h2>
+        <ul id="pages-list" class="pages-list"></ul>
+        <button type="button" data-action="open-files" class="link-button">+ Add pages</button>
+      </section>
+      <section>
+        <h2>Theme</h2>
+        <div id="brand" class="brand-host"></div>
+        <p class="muted small">Change a colour or font once, and it changes everywhere.</p>
+        <div id="theme"></div>
+      </section>
+      <section>
+        <h2>Sections</h2>
+        <div id="sections"></div>
+      </section>
+    </aside>
+
+    <div id="stage" class="stage">
+      <div id="welcome" class="welcome">
+        <h1>Your AI made a website.<br>Now make it yours.</h1>
+        <p class="lead">Drop in any HTML page made with Claude, ChatGPT, Gemini, Lovable, v0, Bolt or any other AI tool.
+          Click to change text, fonts, colours and images, then download clean HTML.</p>
+        <div class="dropzone">
+          <p class="dropzone-title">Drop HTML files or a whole website folder here</p>
+          <div class="button-row center">
+            <button type="button" class="primary" data-action="open-files">Open files</button>
+            <button type="button" data-action="open-folder">Open folder</button>
+            <button type="button" data-action="paste">Paste HTML</button>
+            <button type="button" data-action="sample">Try an example</button>
+          </div>
+          <button type="button" id="restore" class="link-button" hidden>Restore last session</button>
+        </div>
+        <ol class="steps">
+          <li><b>Drop</b> your AI-made page (or paste its code).</li>
+          <li><b>Click</b> anything to edit it. Swap colours and fonts site-wide on the left.</li>
+          <li><b>Download</b> clean HTML, ready to host anywhere.</li>
+        </ol>
+        <p class="privacy">🔒 Runs 100% in your browser. Your files never leave your computer.</p>
+      </div>
+    </div>
+
+    <aside id="inspector" class="sidebar right project-only" aria-label="Selected element"></aside>
+  </main>
+
+  <div id="drop-overlay" class="drop-overlay" hidden><p>Drop to open</p></div>
+  <div id="toasts" class="toasts" aria-live="polite"></div>
+
+  <dialog id="paste-dialog">
+    <form id="paste-form" method="dialog">
+      <h2>Paste your HTML</h2>
+      <p class="muted">Copy the full code of your page (from Claude, ChatGPT or any tool) and paste it here.</p>
+      <textarea id="paste-text" rows="14" spellcheck="false" placeholder="<!DOCTYPE html> …"></textarea>
+      <div class="button-row end">
+        <button type="submit" value="cancel">Cancel</button>
+        <button type="submit" value="open" class="primary">Open</button>
+      </div>
+    </form>
+  </dialog>
+
+  <input type="file" id="file-input" class="visually-hidden" multiple accept=".html,.htm,.css,.js,.mjs,image/*" tabindex="-1" aria-hidden="true">
+  <input type="file" id="folder-input" class="visually-hidden" webkitdirectory multiple tabindex="-1" aria-hidden="true">
+
+  <noscript><p class="noscript">unslop needs JavaScript to run. Everything stays in your browser.</p></noscript>
+  <script>
+(function () {
+'use strict';
+// ---- src/history.js
+// Undo/redo as immutable snapshots. Every function returns a new history and never changes the old one.
+
+const DEFAULT_LIMIT = 100;
+
+function createHistory(present, limit = DEFAULT_LIMIT) {
+  return Object.freeze({ past: Object.freeze([]), present, future: Object.freeze([]), limit });
+}
+
+function record(history, next) {
+  if (next === history.present) return history;
+  const past = [...history.past, history.present].slice(-history.limit);
+  return Object.freeze({ ...history, past: Object.freeze(past), present: next, future: Object.freeze([]) });
+}
+
+const canUndo = (history) => history.past.length > 0;
+const canRedo = (history) => history.future.length > 0;
+
+function undo(history) {
+  if (!canUndo(history)) return history;
+  const past = history.past.slice(0, -1);
+  const previous = history.past[history.past.length - 1];
+  const future = [history.present, ...history.future];
+  return Object.freeze({ ...history, past: Object.freeze(past), present: previous, future: Object.freeze(future) });
+}
+
+function redo(history) {
+  if (!canRedo(history)) return history;
+  const [next, ...future] = history.future;
+  const past = [...history.past, history.present];
+  return Object.freeze({ ...history, past: Object.freeze(past), present: next, future: Object.freeze(future) });
+}
+
+// ---- src/probe.js
+// The preview helper. Pages run their own scripts only inside a sandboxed preview frame that
+// cannot touch the editor. A small helper script reports back two things through postMessage:
+// the styles the page generated at runtime (Tailwind CDN, CSS-in-JS) and link clicks, so
+// "Preview -> click a page link" can switch pages.
+
+const PROBE_DELAY_MS = 600;
+
+function helperScript(token) {
+  const tokenJson = JSON.stringify(token);
+  return `<script data-unslop-probe>(function(){
+var TOKEN=${tokenJson};
+function post(msg){msg.unslop=TOKEN;parent.postMessage(msg,'*');}
+function snapshot(){
+var styles=[],list=document.querySelectorAll('style'),i;
+for(i=0;i<list.length;i++){styles.push(list[i].textContent||'');}
+var clone=document.documentElement.cloneNode(true);
+var own=clone.querySelectorAll('script[data-unslop-probe]');
+for(i=0;i<own.length;i++){own[i].parentNode.removeChild(own[i]);}
+post({type:'probe',styles:styles,text:(document.body?document.body.innerText:'').trim().length,html:clone.outerHTML});
+}
+function later(){setTimeout(snapshot,${PROBE_DELAY_MS});}
+if(document.readyState==='complete'){later();}else{window.addEventListener('load',later);}
+document.addEventListener('click',function(e){
+var a=e.target&&e.target.closest?e.target.closest('a[href]'):null;
+if(!a){return;}
+var href=a.getAttribute('href')||'';
+if(href.charAt(0)==='#'){return;}
+e.preventDefault();
+post({type:'nav',href:href});
+},true);
+})();<\/script>`;
+}
+
+/** The page HTML with the helper inserted before the closing body tag (or at the end). */
+function buildPreviewHtml(html, token) {
+  const helper = helperScript(token);
+  const at = html.toLowerCase().lastIndexOf('</body>');
+  if (at === -1) return html + helper;
+  return html.slice(0, at) + helper + html.slice(at);
+}
+
+/** CSS the page created while running: rendered style texts that were not in the source. */
+function runtimeStyles(originalStyles, renderedStyles) {
+  const original = new Set(originalStyles);
+  return renderedStyles.filter((css) => css.trim() && !original.has(css)).join('\n');
+}
+
+
+// ---- src/canvas.js
+// The page frames. Two sandboxes, never mixed:
+//  - Edit:    sandbox="allow-same-origin" with NO scripts. The editor can reach the DOM; the page's code cannot run.
+//  - Preview: sandbox="allow-scripts" with NO same-origin. The page runs, sealed off from the editor.
+
+
+const EDIT_SANDBOX = 'allow-same-origin';
+const PREVIEW_SANDBOX = 'allow-scripts';
+const PROBE_TIMEOUT_MS = 5000;
+const PROBE_VIEWPORT = { width: 1280, height: 900 };
+
+const EDITOR_CSS = `
+[data-unslop-hover]{outline:2px dashed #8b5cf6 !important;outline-offset:2px !important;cursor:pointer !important}
+[data-unslop-selected]{outline:2px solid #7c3aed !important;outline-offset:2px !important}
+[data-unslop-editing]{outline:2px solid #10b981 !important;outline-offset:2px !important;cursor:text !important}
+html[data-unslop-reveal] [data-unslop-hidden]{display:block !important;outline:2px dashed #f59e0b !important;outline-offset:-2px !important}
+`;
+
+function newToken() {
+  const bytes = new Uint8Array(12);
+  crypto.getRandomValues(bytes);
+  return [...bytes].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+function makeFrame(sandbox, title) {
+  const frame = document.createElement('iframe');
+  frame.setAttribute('sandbox', sandbox);
+  frame.setAttribute('title', title);
+  frame.setAttribute('referrerpolicy', 'no-referrer');
+  return frame;
+}
+
+const loaded = (frame) => new Promise((resolve) => frame.addEventListener('load', resolve, { once: true }));
+
+function addStyle(doc, css, marker) {
+  const style = doc.createElement('style');
+  style.setAttribute('data-unslop-ui', marker);
+  style.textContent = css;
+  (doc.head || doc.documentElement).appendChild(style);
+}
+
+/** Text a visitor would see without JavaScript (scripts, styles and templates excluded). */
+function staticTextLength(html) {
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  doc.querySelectorAll('script, style, noscript, template').forEach((el) => el.remove());
+  return (doc.body?.textContent || '').trim().length;
+}
+
+function sourceStyles(html) {
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  return [...doc.querySelectorAll('style')].map((s) => s.textContent);
+}
+
+/**
+ * Runs the page once, invisibly, in the preview sandbox and reports what JavaScript produced:
+ * { runtimeCss, renderedText, renderedHtml } or null if the page never answered.
+ */
+function probePage(html) {
+  return new Promise((resolve) => {
+    const token = newToken();
+    const frame = makeFrame(PREVIEW_SANDBOX, 'Page probe');
+    Object.assign(frame.style, {
+      position: 'fixed', left: '-20000px', top: '0', border: '0',
+      width: `${PROBE_VIEWPORT.width}px`, height: `${PROBE_VIEWPORT.height}px`, visibility: 'hidden',
+    });
+    const finish = (result) => {
+      window.removeEventListener('message', onMessage);
+      clearTimeout(timer);
+      frame.remove();
+      resolve(result);
+    };
+    const onMessage = (event) => {
+      const data = event.data;
+      if (event.source !== frame.contentWindow || !data || data.unslop !== token || data.type !== 'probe') return;
+      const styles = Array.isArray(data.styles) ? data.styles.filter((s) => typeof s === 'string') : [];
+      finish({
+        runtimeCss: runtimeStyles(sourceStyles(html), styles),
+        renderedText: Number(data.text) || 0,
+        renderedHtml: typeof data.html === 'string' ? data.html : '',
+      });
+    };
+    const timer = setTimeout(() => finish(null), PROBE_TIMEOUT_MS);
+    window.addEventListener('message', onMessage);
+    document.body.appendChild(frame);
+    frame.srcdoc = buildPreviewHtml(html, token);
+  });
+}
+
+/** The visible stage: shows one frame at a time and reports link clicks made in preview. */
+function createCanvas(stage, { onNavigate }) {
+  let frame = null;
+  let token = null;
+
+  window.addEventListener('message', (event) => {
+    const data = event.data;
+    if (!frame || event.source !== frame.contentWindow || !data || data.unslop !== token) return;
+    if (data.type === 'nav' && typeof data.href === 'string') onNavigate(data.href);
+  });
+
+  function mount(next) {
+    if (frame) frame.remove();
+    frame = next;
+    frame.className = 'canvas-frame';
+    stage.appendChild(frame);
+    return frame;
+  }
+
+  async function showEdit(html, runtimeCss) {
+    token = null;
+    const f = mount(makeFrame(EDIT_SANDBOX, 'Editable page'));
+    const ready = loaded(f);
+    f.srcdoc = html;
+    await ready;
+    const doc = f.contentDocument;
+    if (runtimeCss) addStyle(doc, runtimeCss, 'runtime');
+    addStyle(doc, EDITOR_CSS, 'editor');
+    return doc;
+  }
+
+  function showPreview(html) {
+    token = newToken();
+    const f = mount(makeFrame(PREVIEW_SANDBOX, 'Live preview'));
+    f.srcdoc = buildPreviewHtml(html, token);
+  }
+
+  function setWidth(px) {
+    stage.style.setProperty('--canvas-width', px ? `${px}px` : '100%');
+  }
+
+  return { showEdit, showPreview, setWidth };
+}
+
+// ---- src/editor.js
+// Selection and inline text editing inside the (script-free) edit frame.
+
+const INLINE_TAGS = new Set(['B', 'I', 'U', 'S', 'EM', 'STRONG', 'SPAN', 'A', 'BR', 'SMALL', 'MARK', 'CODE', 'SUP', 'SUB', 'ABBR', 'TIME', 'LABEL']);
+const NEVER_SELECT = new Set(['HTML', 'HEAD', 'SCRIPT', 'STYLE', 'META', 'LINK', 'TITLE', 'NOSCRIPT', 'TEMPLATE']);
+const SINGLE_LINE = new Set(['H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'A', 'BUTTON', 'LABEL', 'SPAN', 'LI', 'TD', 'TH', 'FIGCAPTION']);
+const CHANGE_DEBOUNCE_MS = 500;
+
+/** True when an element holds text and only inline formatting, so it can be typed into directly. */
+function isTextElement(el) {
+  if (!el || NEVER_SELECT.has(el.tagName) || el.tagName === 'BODY') return false;
+  if (!(el.textContent || '').trim()) return false;
+  return [...el.children].every((child) => INLINE_TAGS.has(child.tagName) && child.children.length === 0);
+}
+
+function placeCaret(doc, x, y) {
+  const range = doc.caretRangeFromPoint?.(x, y)
+    || (() => {
+      const pos = doc.caretPositionFromPoint?.(x, y);
+      if (!pos) return null;
+      const r = doc.createRange();
+      r.setStart(pos.offsetNode, pos.offset);
+      return r;
+    })();
+  if (!range) return;
+  const selection = doc.getSelection();
+  selection.removeAllRanges();
+  selection.addRange(range);
+}
+
+/**
+ * Wires editing into a document. Callbacks:
+ *   onSelect(el | null), onChange(), onKey(event) for app shortcuts outside text editing.
+ */
+function attachEditor(doc, { onSelect, onChange, onKey }) {
+  let hovered = null;
+  let selected = null;
+  let editing = null;
+  let changeTimer = null;
+
+  const flushChange = () => { clearTimeout(changeTimer); changeTimer = null; onChange(); };
+  const scheduleChange = () => { clearTimeout(changeTimer); changeTimer = setTimeout(flushChange, CHANGE_DEBOUNCE_MS); };
+
+  function setHover(el) {
+    if (hovered === el) return;
+    hovered?.removeAttribute('data-unslop-hover');
+    hovered = el && !NEVER_SELECT.has(el.tagName) && el !== doc.body ? el : null;
+    hovered?.setAttribute('data-unslop-hover', '');
+  }
+
+  function stopEditing() {
+    if (!editing) return;
+    // Clear state first: removing contenteditable blurs the element, which fires focusout -> stopEditing again.
+    const el = editing;
+    editing = null;
+    el.removeAttribute('contenteditable');
+    el.removeAttribute('data-unslop-editing');
+    flushChange();
+  }
+
+  function startEditing(el, point) {
+    editing = el;
+    el.setAttribute('contenteditable', 'true');
+    el.setAttribute('data-unslop-editing', '');
+    el.focus();
+    if (point) placeCaret(doc, point.x, point.y);
+  }
+
+  function select(el, point) {
+    if (el === editing) return;
+    stopEditing();
+    selected?.removeAttribute('data-unslop-selected');
+    selected = el && !NEVER_SELECT.has(el.tagName) ? el : null;
+    if (selected) {
+      selected.setAttribute('data-unslop-selected', '');
+      if (point && isTextElement(selected)) startEditing(selected, point);
+    }
+    onSelect(selected);
+  }
+
+  const listeners = {
+    mouseover: (e) => setHover(e.target),
+    mouseleave: () => setHover(null),
+    click: (e) => {
+      e.preventDefault();
+      if (editing && editing.contains(e.target)) return;
+      select(e.target, { x: e.clientX, y: e.clientY });
+    },
+    submit: (e) => e.preventDefault(),
+    input: () => { if (editing) scheduleChange(); },
+    paste: (e) => {
+      if (!editing) return;
+      e.preventDefault();
+      doc.execCommand('insertText', false, e.clipboardData.getData('text/plain'));
+    },
+    keydown: (e) => {
+      if (editing) {
+        if (e.key === 'Escape') { e.preventDefault(); stopEditing(); return; }
+        if (e.key === 'Enter' && e.shiftKey) { e.preventDefault(); doc.execCommand('insertLineBreak'); return; }
+        if (e.key === 'Enter' && SINGLE_LINE.has(editing.tagName)) { e.preventDefault(); stopEditing(); }
+        return;
+      }
+      onKey(e);
+    },
+    focusout: (e) => { if (editing && e.target === editing) stopEditing(); },
+  };
+  for (const [type, fn] of Object.entries(listeners)) doc.addEventListener(type, fn, true);
+
+  return {
+    select: (el) => select(el, null),
+    clear: () => select(null, null),
+    get selected() { return selected; },
+    finish: stopEditing,
+    destroy() {
+      clearTimeout(changeTimer);
+      for (const [type, fn] of Object.entries(listeners)) doc.removeEventListener(type, fn, true);
+    },
+  };
+}
+
+// ---- src/ui.js
+// Tiny DOM helpers for the editor's own interface. Text always goes in as textContent, never innerHTML,
+// so names and text taken from a dropped page can never inject markup into the editor.
+
+function h(tag, props = {}, children = []) {
+  const el = document.createElement(tag);
+  for (const [key, value] of Object.entries(props)) {
+    if (value === undefined || value === null || value === false) continue;
+    if (key === 'text') el.textContent = value;
+    else if (key === 'class') el.className = value;
+    else if (key.startsWith('on') && typeof value === 'function') el.addEventListener(key.slice(2), value);
+    else if (key === 'style' && typeof value === 'object') Object.assign(el.style, value);
+    else if (value === true) el.setAttribute(key, '');
+    else el.setAttribute(key, String(value));
+  }
+  for (const child of [].concat(children)) {
+    if (child === null || child === undefined || child === false) continue;
+    el.appendChild(typeof child === 'string' ? document.createTextNode(child) : child);
+  }
+  return el;
+}
+
+const TOAST_MS = 4200;
+
+function toast(message, tone = 'info') {
+  const host = document.getElementById('toasts');
+  if (!host) return;
+  const note = h('div', { class: `toast toast-${tone}`, role: 'status', text: message });
+  host.appendChild(note);
+  setTimeout(() => note.remove(), TOAST_MS);
+}
+
+function field(label, control, hint) {
+  return h('label', { class: 'field' }, [h('span', { class: 'field-label', text: label }), control, hint ? h('span', { class: 'field-hint', text: hint }) : null]);
+}
+
+const clear = (el) => { while (el.firstChild) el.removeChild(el.firstChild); };
+
+function storageGet(key) {
+  try { return window.localStorage.getItem(key); } catch { return null; }
+}
+
+function storageSet(key, value) {
+  try { window.localStorage.setItem(key, value); return true; } catch { return false; }
+}
+
+function storageRemove(key) {
+  try { window.localStorage.removeItem(key); } catch { /* storage unavailable: nothing to remove */ }
+}
+
+// ---- src/color.js
+// Colour parsing: turns the many ways CSS spells a colour into one canonical hex string,
+// so "#333", "#333333" and "rgb(51, 51, 51)" are recognised as the same colour.
+
+const HEX = /^#([0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
+const RGB = /^rgba?\(\s*(\d{1,3})\s*[,\s]\s*(\d{1,3})\s*[,\s]\s*(\d{1,3})\s*(?:[,/]\s*([\d.]+)(%?)\s*)?\)$/i;
+const MAX_CHANNEL = 255;
+
+const toHexPair = (n) => n.toString(16).padStart(2, '0');
+
+function withAlpha(rgbHex, alphaByte) {
+  return alphaByte === MAX_CHANNEL ? rgbHex : rgbHex + toHexPair(alphaByte);
+}
+
+function fromHex(body) {
+  const expanded = body.length <= 4 ? [...body].map((ch) => ch + ch).join('') : body;
+  const lower = expanded.toLowerCase();
+  if (lower.length === 8) return withAlpha('#' + lower.slice(0, 6), parseInt(lower.slice(6), 16));
+  return '#' + lower;
+}
+
+function fromRgb(match) {
+  const channels = match.slice(1, 4).map(Number);
+  if (channels.some((c) => c > MAX_CHANNEL)) return null;
+  const rgbHex = '#' + channels.map(toHexPair).join('');
+  if (match[4] === undefined) return rgbHex;
+  const alpha = match[5] === '%' ? Number(match[4]) / 100 : Number(match[4]);
+  if (!(alpha >= 0 && alpha <= 1)) return null;
+  return withAlpha(rgbHex, Math.round(alpha * MAX_CHANNEL));
+}
+
+/** Returns a lowercase "#rrggbb" or "#rrggbbaa" string, or null when the input is not a colour we handle. */
+function normalizeColor(input) {
+  if (typeof input !== 'string') return null;
+  const value = input.trim();
+  const hex = value.match(HEX);
+  if (hex) return fromHex(hex[1]);
+  const rgb = value.match(RGB);
+  if (rgb) return fromRgb(rgb);
+  return null;
+}
+
+// ---- src/theme.js
+// Theme scanning on CSS text: find a site's colours and fonts, and swap one for another everywhere.
+// Pure string functions, so they are tested in Node and reused by the browser code.
+
+
+const COLOR_TOKEN = /#[0-9a-fA-F]{3,8}\b|rgba?\([^)]*\)/g;
+const PROTECTED = /url\([^)]*\)|"[^"]*"|'[^']*'/g;
+const FONT_DECL = /(font-family\s*:\s*)([^;{}]+)/gi;
+const GENERIC_FONTS = new Set([
+  'serif', 'sans-serif', 'monospace', 'cursive', 'fantasy', 'system-ui', 'ui-serif', 'ui-sans-serif',
+  'ui-monospace', 'ui-rounded', '-apple-system', 'blinkmacsystemfont', 'emoji', 'math', 'fangsong',
+  'inherit', 'initial', 'unset', 'revert',
+]);
+
+function protectedRanges(text) {
+  return [...text.matchAll(PROTECTED)].map((m) => [m.index, m.index + m[0].length]);
+}
+
+function isProtected(index, ranges) {
+  return ranges.some(([start, end]) => index >= start && index < end);
+}
+
+/** Every colour token outside quotes and url(), with its canonical value. */
+function colorTokens(text) {
+  const ranges = protectedRanges(text);
+  return [...text.matchAll(COLOR_TOKEN)]
+    .filter((m) => !isProtected(m.index, ranges))
+    .map((m) => ({ index: m.index, raw: m[0], color: normalizeColor(m[0]) }))
+    .filter((t) => t.color !== null);
+}
+
+function tally(keys) {
+  const counts = new Map();
+  for (const key of keys) counts.set(key, (counts.get(key) || 0) + 1);
+  return [...counts.entries()].sort((a, b) => b[1] - a[1]);
+}
+
+/** Colours used in the CSS, most used first: [{ color: "#rrggbb", count }]. */
+function extractColors(text) {
+  return tally(colorTokens(text).map((t) => t.color)).map(([color, count]) => ({ color, count }));
+}
+
+/** Replaces every spelling of `from` with `to`. Returns the text unchanged when nothing matches. */
+function replaceColor(text, from, to) {
+  const target = normalizeColor(from);
+  if (!target) return text;
+  const hits = colorTokens(text).filter((t) => t.color === target);
+  let out = text;
+  for (const hit of hits.reverse()) {
+    out = out.slice(0, hit.index) + to + out.slice(hit.index + hit.raw.length);
+  }
+  return out;
+}
+
+const unquote = (name) => name.trim().replace(/^["']|["']$/g, '').trim();
+
+function quoteFont(name) {
+  return /^[A-Za-z_-][\w-]*$/.test(name) ? name : `'${name.replace(/'/g, "\\'")}'`;
+}
+
+function firstFamily(stack) {
+  return unquote(stack.split(',')[0]);
+}
+
+/** Named fonts used as the first choice in font-family declarations, most used first. */
+function extractFonts(text) {
+  const families = [...text.matchAll(FONT_DECL)]
+    .map((m) => firstFamily(m[2]))
+    .filter((name) => name && !GENERIC_FONTS.has(name.toLowerCase()));
+  const spelling = new Map();
+  for (const name of families) if (!spelling.has(name.toLowerCase())) spelling.set(name.toLowerCase(), name);
+  return tally(families.map((n) => n.toLowerCase())).map(([key, count]) => ({ family: spelling.get(key), count }));
+}
+
+/** Replaces the font family `from` with `to` inside every font-family declaration. */
+function replaceFont(text, from, to) {
+  const target = from.trim().toLowerCase();
+  return text.replace(FONT_DECL, (whole, prefix, stack) => {
+    const parts = stack.split(',').map((part) => {
+      const name = unquote(part);
+      if (name.toLowerCase() !== target) return part;
+      return part.replace(part.trim(), quoteFont(to));
+    });
+    return prefix + parts.join(',');
+  });
+}
+
+// ---- src/fonts.js
+// A curated Google Fonts library, including Indian-script faces, plus helpers to load a font into a page.
+
+
+const W = [400, 500, 600, 700];
+const WIDE = [300, 400, 500, 600, 700, 800];
+
+const FONT_LIBRARY = Object.freeze([
+  { family: 'Inter', category: 'Sans', weights: WIDE },
+  { family: 'Manrope', category: 'Sans', weights: WIDE },
+  { family: 'DM Sans', category: 'Sans', weights: W },
+  { family: 'Plus Jakarta Sans', category: 'Sans', weights: WIDE },
+  { family: 'Poppins', category: 'Sans', weights: WIDE },
+  { family: 'Outfit', category: 'Sans', weights: WIDE },
+  { family: 'Figtree', category: 'Sans', weights: WIDE },
+  { family: 'Work Sans', category: 'Sans', weights: WIDE },
+  { family: 'IBM Plex Sans', category: 'Sans', weights: W },
+  { family: 'Space Grotesk', category: 'Sans', weights: W },
+  { family: 'Nunito', category: 'Sans', weights: WIDE },
+  { family: 'Rubik', category: 'Sans', weights: WIDE },
+  { family: 'Playfair Display', category: 'Serif', weights: W },
+  { family: 'Fraunces', category: 'Serif', weights: WIDE },
+  { family: 'Lora', category: 'Serif', weights: W },
+  { family: 'Merriweather', category: 'Serif', weights: [300, 400, 700] },
+  { family: 'Source Serif 4', category: 'Serif', weights: W },
+  { family: 'Libre Baskerville', category: 'Serif', weights: [400, 700] },
+  { family: 'Cormorant Garamond', category: 'Serif', weights: W },
+  { family: 'DM Serif Display', category: 'Serif', weights: [400] },
+  { family: 'Instrument Serif', category: 'Serif', weights: [400] },
+  { family: 'Bricolage Grotesque', category: 'Display', weights: WIDE },
+  { family: 'Syne', category: 'Display', weights: W },
+  { family: 'Archivo Black', category: 'Display', weights: [400] },
+  { family: 'Bebas Neue', category: 'Display', weights: [400] },
+  { family: 'Abril Fatface', category: 'Display', weights: [400] },
+  { family: 'JetBrains Mono', category: 'Mono', weights: W },
+  { family: 'Space Mono', category: 'Mono', weights: [400, 700] },
+  { family: 'IBM Plex Mono', category: 'Mono', weights: W },
+  { family: 'Caveat', category: 'Handwriting', weights: W },
+  { family: 'Hind', category: 'Indian scripts', weights: [300, 400, 500, 600, 700] },
+  { family: 'Mukta', category: 'Indian scripts', weights: WIDE },
+  { family: 'Noto Sans Devanagari', category: 'Indian scripts', weights: W },
+  { family: 'Tiro Devanagari Hindi', category: 'Indian scripts', weights: [400] },
+]);
+
+const FALLBACK = { Sans: 'sans-serif', Serif: 'serif', Display: 'sans-serif', Mono: 'monospace', Handwriting: 'cursive' };
+
+function findFont(family) {
+  const key = family.trim().toLowerCase();
+  return FONT_LIBRARY.find((f) => f.family.toLowerCase() === key) || null;
+}
+
+function fontStack(family) {
+  const font = findFont(family);
+  return `${quoteFont(family)}, ${FALLBACK[font?.category] || 'sans-serif'}`;
+}
+
+function googleFontsHref(font) {
+  const name = font.family.replace(/ /g, '+');
+  const axis = font.weights.length > 1 ? `:wght@${font.weights.join(';')}` : '';
+  return `https://fonts.googleapis.com/css2?family=${name}${axis}&display=swap`;
+}
+
+/** Adds the Google Fonts stylesheet for a library font to the page once. Unknown fonts are left alone. */
+function ensureFontLink(doc, family) {
+  const font = findFont(family);
+  if (!font) return;
+  const href = googleFontsHref(font);
+  const already = [...doc.querySelectorAll('link[rel~="stylesheet"]')].some((l) => l.getAttribute('href') === href);
+  if (already) return;
+  const link = doc.createElement('link');
+  link.setAttribute('rel', 'stylesheet');
+  link.setAttribute('href', href);
+  (doc.head || doc.documentElement).appendChild(link);
+}
+
+// ---- src/inspector.js
+// The right-hand panel: everything you can change about the selected element.
+
+
+
+
+
+const TAG_NAMES = {
+  H1: 'Heading 1', H2: 'Heading 2', H3: 'Heading 3', H4: 'Heading 4', H5: 'Heading 5', H6: 'Heading 6',
+  P: 'Paragraph', A: 'Link', BUTTON: 'Button', IMG: 'Image', LI: 'List item', UL: 'List', OL: 'List',
+  SECTION: 'Section', HEADER: 'Header', FOOTER: 'Footer', NAV: 'Navigation', DIV: 'Box', SPAN: 'Text',
+  MAIN: 'Main area', ARTICLE: 'Article', BODY: 'Page', svg: 'Icon', TD: 'Table cell', TH: 'Table header',
+};
+const WEIGHTS = [300, 400, 500, 600, 700, 800, 900];
+
+const describe = (el) => TAG_NAMES[el.tagName] || el.tagName.toLowerCase();
+
+function hexOf(value, fallback = '#000000') {
+  const hex = normalizeColor(value || '');
+  return hex ? hex.slice(0, 7) : fallback;
+}
+
+const leadingFamily = (value) => (value || '').split(',')[0].trim().replace(/^["']|["']$/g, '');
+
+function readImageFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
+/** Builds the inspector for `el`. `commit()` records the change for undo and autosave. */
+function renderInspector(panel, el, { commit, actions }) {
+  clear(panel);
+  if (!el) {
+    panel.appendChild(h('div', { class: 'empty-note' }, [
+      h('p', { text: 'Click anything on the page to change it.' }),
+      h('p', { class: 'muted', text: 'Click text to type straight into it. Enter finishes, Shift+Enter adds a line.' }),
+    ]));
+    return;
+  }
+  const doc = el.ownerDocument;
+  const cs = doc.defaultView.getComputedStyle(el);
+  const setStyle = (prop, value) => { el.style.setProperty(prop, value); commit(); };
+
+  panel.appendChild(h('div', { class: 'inspector-head' }, [
+    h('strong', { text: describe(el) }),
+    h('div', { class: 'button-row' }, [
+      h('button', { type: 'button', title: 'Select the box around this', text: '↑ Parent', onclick: actions.selectParent }),
+      h('button', { type: 'button', title: 'Duplicate', text: 'Duplicate', onclick: actions.duplicate }),
+      h('button', { type: 'button', title: 'Move up', text: '▲', onclick: () => actions.move(-1) }),
+      h('button', { type: 'button', title: 'Move down', text: '▼', onclick: () => actions.move(1) }),
+      h('button', { type: 'button', title: 'Hide this element', text: 'Hide', onclick: actions.hide }),
+      h('button', { type: 'button', class: 'danger', title: 'Delete (Del key)', text: 'Delete', onclick: actions.remove }),
+    ]),
+  ]));
+
+  if (isTextElement(el) || ['A', 'BUTTON'].includes(el.tagName)) panel.appendChild(textSection(el, cs, setStyle, doc, commit));
+  if (el.tagName === 'IMG') panel.appendChild(imageSection(el, commit));
+  const link = el.closest('a');
+  if (link) panel.appendChild(linkSection(link, commit));
+  panel.appendChild(boxSection(el, cs, setStyle));
+}
+
+function textSection(el, cs, setStyle, doc) {
+  const current = leadingFamily(cs.fontFamily);
+  const fontSelect = h('select', {
+    onchange: (e) => { ensureFontLink(doc, e.target.value); setStyle('font-family', fontStack(e.target.value)); },
+  }, [
+    h('option', { value: current, text: `${current} (current)` }),
+    ...[...new Set(FONT_LIBRARY.map((f) => f.category))].map((cat) =>
+      h('optgroup', { label: cat }, FONT_LIBRARY.filter((f) => f.category === cat).map((f) => h('option', { value: f.family, text: f.family })))),
+  ]);
+  const size = h('input', { type: 'number', min: 6, max: 400, value: Math.round(parseFloat(cs.fontSize)), onchange: (e) => setStyle('font-size', `${e.target.value}px`) });
+  const weight = h('select', { onchange: (e) => setStyle('font-weight', e.target.value) },
+    WEIGHTS.map((w) => h('option', { value: w, text: String(w), selected: String(w) === cs.fontWeight })));
+  const color = h('input', { type: 'color', value: hexOf(cs.color), oninput: (e) => el.style.setProperty('color', e.target.value), onchange: (e) => setStyle('color', e.target.value) });
+  const align = h('div', { class: 'segmented' }, ['left', 'center', 'right'].map((a) =>
+    h('button', { type: 'button', class: cs.textAlign === a ? 'active' : '', text: a[0].toUpperCase() + a.slice(1), onclick: () => setStyle('text-align', a) })));
+  const italic = h('button', { type: 'button', class: cs.fontStyle === 'italic' ? 'active' : '', text: 'Italic', onclick: () => setStyle('font-style', cs.fontStyle === 'italic' ? 'normal' : 'italic') });
+  return h('section', { class: 'panel-section' }, [
+    h('h3', { text: 'Text' }),
+    field('Font', fontSelect),
+    h('div', { class: 'field-row' }, [field('Size (px)', size), field('Weight', weight)]),
+    h('div', { class: 'field-row' }, [field('Colour', color), field('Style', italic)]),
+    field('Align', align),
+  ]);
+}
+
+function imageSection(img, commit) {
+  const fileInput = h('input', {
+    type: 'file', accept: 'image/*', class: 'visually-hidden',
+    onchange: async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      img.setAttribute('src', await readImageFile(file));
+      img.removeAttribute('srcset');
+      commit();
+    },
+  });
+  const url = h('input', { type: 'url', placeholder: 'https://…', value: img.getAttribute('src')?.startsWith('data:') ? '' : img.getAttribute('src') || '', onchange: (e) => { img.setAttribute('src', e.target.value); img.removeAttribute('srcset'); commit(); } });
+  const alt = h('input', { type: 'text', value: img.getAttribute('alt') || '', placeholder: 'Describe the image', onchange: (e) => { img.setAttribute('alt', e.target.value); commit(); } });
+  const fit = h('select', { onchange: (e) => { img.style.setProperty('object-fit', e.target.value); commit(); } },
+    ['cover', 'contain', 'fill'].map((v) => h('option', { value: v, text: v, selected: img.style.objectFit === v })));
+  return h('section', { class: 'panel-section' }, [
+    h('h3', { text: 'Image' }),
+    h('button', { type: 'button', class: 'primary', text: 'Replace image…', onclick: () => fileInput.click() }), fileInput,
+    field('Or image URL', url),
+    field('Alt text', alt, 'Screen readers and Google read this.'),
+    field('Fit', fit),
+  ]);
+}
+
+function linkSection(link, commit) {
+  const href = h('input', { type: 'text', value: link.getAttribute('href') || '', placeholder: 'https://… or about.html', onchange: (e) => { link.setAttribute('href', e.target.value); commit(); } });
+  const newTab = h('input', { type: 'checkbox', checked: link.getAttribute('target') === '_blank', onchange: (e) => {
+    if (e.target.checked) { link.setAttribute('target', '_blank'); link.setAttribute('rel', 'noopener'); } else { link.removeAttribute('target'); }
+    commit();
+  } });
+  return h('section', { class: 'panel-section' }, [h('h3', { text: 'Link' }), field('Goes to', href), h('label', { class: 'check' }, [newTab, ' Open in a new tab'])]);
+}
+
+function boxSection(el, cs, setStyle) {
+  const transparent = cs.backgroundColor === 'rgba(0, 0, 0, 0)' || cs.backgroundColor === 'transparent';
+  const bg = h('input', { type: 'color', value: transparent ? '#ffffff' : hexOf(cs.backgroundColor, '#ffffff'), oninput: (e) => el.style.setProperty('background-color', e.target.value), onchange: (e) => setStyle('background-color', e.target.value) });
+  const noBg = h('button', { type: 'button', text: 'None', onclick: () => { el.style.setProperty('background', 'none'); setStyle('background-color', 'transparent'); } });
+  const px = (v) => Math.round(parseFloat(v) || 0);
+  const padding = h('input', { type: 'number', min: 0, max: 400, value: px(cs.paddingTop), onchange: (e) => setStyle('padding', `${e.target.value}px`) });
+  const radius = h('input', { type: 'number', min: 0, max: 400, value: px(cs.borderTopLeftRadius), onchange: (e) => setStyle('border-radius', `${e.target.value}px`) });
+  const opacity = h('input', { type: 'range', min: 0, max: 100, value: Math.round(parseFloat(cs.opacity) * 100), onchange: (e) => setStyle('opacity', String(e.target.value / 100)) });
+  return h('section', { class: 'panel-section' }, [
+    h('h3', { text: 'Box' }),
+    field('Background', h('div', { class: 'inline' }, [bg, noBg])),
+    h('div', { class: 'field-row' }, [field('Padding (px)', padding), field('Corners (px)', radius)]),
+    field('Opacity', opacity),
+  ]);
+}
+
+// ---- src/dom-theme.js
+// Applies theme swaps to a live page: every <style> block, every style="" attribute,
+// and SVG colour attributes. Editor-owned styles are never touched.
+
+
+
+const COLOR_ATTRIBUTES = ['fill', 'stroke', 'stop-color', 'color', 'bgcolor'];
+
+function cssSources(doc) {
+  const styles = [...doc.querySelectorAll('style:not([data-unslop-ui])')].map((el) => ({
+    read: () => el.textContent,
+    write: (text) => { el.textContent = text; },
+  }));
+  const inline = [...doc.querySelectorAll('[style]')].map((el) => ({
+    read: () => el.getAttribute('style'),
+    write: (text) => el.setAttribute('style', text),
+  }));
+  const attrs = COLOR_ATTRIBUTES.flatMap((name) =>
+    [...doc.querySelectorAll(`[${name}]`)].map((el) => ({
+      read: () => el.getAttribute(name),
+      write: (text) => el.setAttribute(name, text),
+    })));
+  return [...styles, ...inline, ...attrs];
+}
+
+/** All page-owned CSS as one text, for extracting the palette and fonts. */
+function readThemeCss(doc) {
+  return cssSources(doc).map((s) => s.read()).join('\n');
+}
+
+function rewriteAll(doc, transform) {
+  let changed = 0;
+  for (const source of cssSources(doc)) {
+    const before = source.read();
+    const after = transform(before);
+    if (after !== before) {
+      source.write(after);
+      changed += 1;
+    }
+  }
+  return changed;
+}
+
+/** Swaps one colour for another everywhere in the page. Returns how many places changed. */
+function swapColor(doc, from, to) {
+  return rewriteAll(doc, (text) => replaceColor(text, from, to));
+}
+
+/** Swaps one font family for another everywhere, loading the new font when it is in the library. */
+function swapFont(doc, from, to) {
+  const changed = rewriteAll(doc, (text) => replaceFont(text, from, to));
+  if (changed > 0) ensureFontLink(doc, to);
+  return changed;
+}
+
+const TEMP_COLOR_BASE = 0xfe0100;
+
+function temporaryColors(count, usedColors) {
+  const used = new Set(usedColors);
+  const temps = [];
+  for (let n = TEMP_COLOR_BASE; temps.length < count; n += 1) {
+    const hex = `#${n.toString(16).padStart(6, '0')}`;
+    if (!used.has(hex)) temps.push(hex);
+  }
+  return temps;
+}
+
+/**
+ * Applies a set of colour and font swaps as if all happened at once, so "A->B, B->A" does not
+ * collapse into one value. Each source goes to a temporary value first, then to its target.
+ */
+function applySwapPlan(doc, plan, usedColors) {
+  const temps = temporaryColors(plan.colors.length, usedColors);
+  let changed = 0;
+  plan.colors.forEach(([from], i) => { changed += swapColor(doc, from, temps[i]); });
+  plan.colors.forEach(([, to], i) => { swapColor(doc, temps[i], to); });
+  plan.fonts.forEach(([from], i) => { changed += rewriteAll(doc, (text) => replaceFont(text, from, `unslop-tmp-${i}`)); });
+  plan.fonts.forEach(([, to], i) => { swapFont(doc, `unslop-tmp-${i}`, to); });
+  return changed;
+}
+
+// ---- src/sidebar.js
+// The left-hand panel: pages, the page's colours and fonts (swap them everywhere), and its sections.
+
+
+
+
+
+const MAX_SWATCHES = 18;
+const SECTION_SELECTOR = 'header, nav, main, section, article, aside, footer, [id]:not(script):not(style):not(link):not(meta)';
+const MAX_SECTIONS = 40;
+
+function sectionLabel(el) {
+  const heading = el.querySelector('h1, h2, h3, h4');
+  const text = (heading?.textContent || el.textContent || '').trim().replace(/\s+/g, ' ');
+  const name = el.id ? `#${el.id}` : el.tagName.toLowerCase();
+  return text ? `${name} · ${text.slice(0, 38)}${text.length > 38 ? '…' : ''}` : name;
+}
+
+const SKIP_HIDDEN = 'script, style, template, noscript, link, meta, title, svg *, option, datalist';
+
+/**
+ * Parts of the page that CSS hides and that hold text: other "pages" in a one-file site, inactive tabs,
+ * wizard steps, collapsed panels. Only the outermost hidden element of each part is returned.
+ */
+function findHiddenParts(doc) {
+  const view = doc.defaultView;
+  const found = [];
+  for (const el of doc.body.querySelectorAll('*')) {
+    if (el.matches(SKIP_HIDDEN) || found.some((outer) => outer.contains(el))) continue;
+    const hidden = el.hasAttribute('data-unslop-hidden') || view.getComputedStyle(el).display === 'none';
+    if (hidden && (el.textContent || '').trim()) found.push(el);
+  }
+  found.forEach((el) => el.setAttribute('data-unslop-hidden', ''));
+  return found;
+}
+
+/** Top-level sections plus every hidden part, in page order, for the Sections list. */
+function findSections(doc) {
+  const all = [...doc.body.querySelectorAll(SECTION_SELECTOR)];
+  const topLevel = all.filter((el) => !all.some((other) => other !== el && other.contains(el)));
+  const hiddenParts = findHiddenParts(doc);
+  const items = [...new Set([...topLevel, ...hiddenParts])]
+    .sort((a, b) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1));
+  return items.slice(0, MAX_SECTIONS).map((el) => ({ el, hidden: hiddenParts.includes(el), label: sectionLabel(el) }));
+}
+
+function renderPages(list, pages, current, { onOpen, onRemove }) {
+  clear(list);
+  pages.forEach((page, i) => {
+    list.appendChild(h('li', { class: i === current ? 'active' : '' }, [
+      h('button', { type: 'button', class: 'page-link', text: page.name, 'aria-current': i === current ? 'page' : null, onclick: () => onOpen(i) }),
+      pages.length > 1 ? h('button', { type: 'button', class: 'icon', title: `Remove ${page.name}`, 'aria-label': `Remove ${page.name}`, text: '×', onclick: () => onRemove(i) }) : null,
+    ]));
+  });
+}
+
+function renderTheme(host, doc, { onColor, onFont, hasRuntimeCss }) {
+  clear(host);
+  const css = readThemeCss(doc);
+  const colors = extractColors(css).slice(0, MAX_SWATCHES);
+  const fonts = extractFonts(css);
+
+  host.appendChild(h('h3', { text: 'Colours' }));
+  if (!colors.length) host.appendChild(h('p', { class: 'muted', text: 'No colours found in the page styles.' }));
+  const swatches = h('div', { class: 'swatches' });
+  for (const { color, count } of colors) {
+    const picker = h('input', { type: 'color', value: color.slice(0, 7), class: 'swatch-input', 'aria-label': `Change ${color} everywhere`, onchange: (e) => onColor(color, e.target.value) });
+    swatches.appendChild(h('label', { class: 'swatch', title: `${color} · used ${count}× · click to change everywhere` }, [
+      h('span', { class: 'swatch-chip', style: { background: color } }), picker,
+    ]));
+  }
+  host.appendChild(swatches);
+  if (hasRuntimeCss) host.appendChild(h('p', { class: 'muted small', text: 'Some colours come from Tailwind-style classes. To change those, select the element and use the right panel.' }));
+
+  host.appendChild(h('h3', { text: 'Fonts' }));
+  if (!fonts.length) host.appendChild(h('p', { class: 'muted', text: 'No named fonts found. Select text to set one.' }));
+  for (const { family } of fonts) {
+    const select = h('select', { 'aria-label': `Replace ${family} everywhere`, onchange: (e) => e.target.value && onFont(family, e.target.value) }, [
+      h('option', { value: '', text: `${family} → change to…` }),
+      ...FONT_LIBRARY.map((f) => h('option', { value: f.family, text: `${f.family} (${f.category})` })),
+    ]);
+    host.appendChild(h('div', { class: 'font-row' }, [select]));
+  }
+}
+
+function renderSections(host, doc, { onPick, revealOn, onReveal }) {
+  clear(host);
+  const sections = findSections(doc);
+  const hiddenCount = sections.filter((s) => s.hidden).length;
+  const toggle = h('input', { type: 'checkbox', checked: revealOn, onchange: (e) => onReveal(e.target.checked) });
+  host.appendChild(h('label', { class: 'check reveal' }, [toggle, ` Show hidden parts${hiddenCount ? ` (${hiddenCount})` : ''}`]));
+  const list = h('ul', { class: 'section-list' });
+  for (const s of sections) {
+    list.appendChild(h('li', {}, [h('button', { type: 'button', class: s.hidden ? 'is-hidden' : '', text: s.hidden ? `◌ ${s.label}` : s.label, onclick: () => onPick(s.el) })]));
+  }
+  host.appendChild(list);
+}
+
+// ---- src/zip.js
+// A tiny dependency-free ZIP writer (stored, no compression) so a whole site downloads as one file.
+
+const SIG_LOCAL = 0x04034b50;
+const SIG_CENTRAL = 0x02014b50;
+const SIG_END = 0x06054b50;
+const VERSION = 20;
+const FLAG_UTF8_NAMES = 0x0800;
+const METHOD_STORE = 0;
+const LOCAL_HEADER_SIZE = 30;
+const CENTRAL_HEADER_SIZE = 46;
+const END_RECORD_SIZE = 22;
+
+const CRC_TABLE = (() => {
+  const table = new Uint32Array(256);
+  for (let n = 0; n < 256; n += 1) {
+    let c = n;
+    for (let k = 0; k < 8; k += 1) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+    table[n] = c >>> 0;
+  }
+  return table;
+})();
+
+function crc32(bytes) {
+  let crc = 0xffffffff;
+  for (const byte of bytes) crc = CRC_TABLE[(crc ^ byte) & 0xff] ^ (crc >>> 8);
+  return (crc ^ 0xffffffff) >>> 0;
+}
+
+function dosDateTime(date) {
+  const time = (date.getHours() << 11) | (date.getMinutes() << 5) | Math.floor(date.getSeconds() / 2);
+  const day = ((date.getFullYear() - 1980) << 9) | ((date.getMonth() + 1) << 5) | date.getDate();
+  return { time, day };
+}
+
+function header(size, writeFields) {
+  const bytes = new Uint8Array(size);
+  writeFields(new DataView(bytes.buffer));
+  return bytes;
+}
+
+function localHeader(entry, stamp) {
+  return header(LOCAL_HEADER_SIZE, (v) => {
+    v.setUint32(0, SIG_LOCAL, true);
+    v.setUint16(4, VERSION, true);
+    v.setUint16(6, FLAG_UTF8_NAMES, true);
+    v.setUint16(8, METHOD_STORE, true);
+    v.setUint16(10, stamp.time, true);
+    v.setUint16(12, stamp.day, true);
+    v.setUint32(14, entry.crc, true);
+    v.setUint32(18, entry.data.length, true);
+    v.setUint32(22, entry.data.length, true);
+    v.setUint16(26, entry.name.length, true);
+    v.setUint16(28, 0, true);
+  });
+}
+
+function centralHeader(entry, stamp) {
+  return header(CENTRAL_HEADER_SIZE, (v) => {
+    v.setUint32(0, SIG_CENTRAL, true);
+    v.setUint16(4, VERSION, true);
+    v.setUint16(6, VERSION, true);
+    v.setUint16(8, FLAG_UTF8_NAMES, true);
+    v.setUint16(10, METHOD_STORE, true);
+    v.setUint16(12, stamp.time, true);
+    v.setUint16(14, stamp.day, true);
+    v.setUint32(16, entry.crc, true);
+    v.setUint32(20, entry.data.length, true);
+    v.setUint32(24, entry.data.length, true);
+    v.setUint16(28, entry.name.length, true);
+    v.setUint32(42, entry.offset, true);
+  });
+}
+
+function endRecord(count, centralSize, centralOffset) {
+  return header(END_RECORD_SIZE, (v) => {
+    v.setUint32(0, SIG_END, true);
+    v.setUint16(8, count, true);
+    v.setUint16(10, count, true);
+    v.setUint32(12, centralSize, true);
+    v.setUint32(16, centralOffset, true);
+  });
+}
+
+function concat(chunks) {
+  const out = new Uint8Array(chunks.reduce((sum, c) => sum + c.length, 0));
+  let at = 0;
+  for (const c of chunks) {
+    out.set(c, at);
+    at += c.length;
+  }
+  return out;
+}
+
+/** files: [{ name, text }] -> Uint8Array holding a valid .zip archive. */
+function createZip(files, date = new Date()) {
+  const encoder = new TextEncoder();
+  const stamp = dosDateTime(date);
+  const chunks = [];
+  const entries = [];
+  let offset = 0;
+  for (const file of files) {
+    const data = encoder.encode(file.text);
+    const entry = { name: encoder.encode(file.name), data, crc: crc32(data), offset };
+    const local = localHeader(entry, stamp);
+    chunks.push(local, entry.name, data);
+    offset += local.length + entry.name.length + data.length;
+    entries.push(entry);
+  }
+  const central = entries.flatMap((e) => [centralHeader(e, stamp), e.name]);
+  const centralSize = central.reduce((sum, c) => sum + c.length, 0);
+  return concat([...chunks, ...central, endRecord(entries.length, centralSize, offset)]);
+}
+
+// ---- src/exporter.js
+// Turns the edited page back into clean HTML: everything the editor added is removed.
+
+
+const EDITOR_ATTR_PREFIX = 'data-unslop-';
+
+function doctypeString(doc) {
+  const dt = doc.doctype;
+  if (!dt) return '';
+  const pub = dt.publicId ? ` PUBLIC "${dt.publicId}"` : '';
+  const sys = dt.systemId ? `${dt.publicId ? '' : ' SYSTEM'} "${dt.systemId}"` : '';
+  return `<!DOCTYPE ${dt.name}${pub}${sys}>\n`;
+}
+
+function stripEditorAttributes(el) {
+  for (const attr of [...el.attributes]) {
+    if (attr.name.startsWith(EDITOR_ATTR_PREFIX)) el.removeAttribute(attr.name);
+  }
+}
+
+/** Clean HTML for a document that is (or was) open in the editor. */
+function serializePage(doc) {
+  const clone = doc.documentElement.cloneNode(true);
+  clone.querySelectorAll('[data-unslop-ui]').forEach((el) => el.remove());
+  clone.querySelectorAll('[data-unslop-editing]').forEach((el) => el.removeAttribute('contenteditable'));
+  stripEditorAttributes(clone);
+  clone.querySelectorAll('*').forEach(stripEditorAttributes);
+  return doctypeString(doc) + clone.outerHTML;
+}
+
+function saveBlob(fileName, blob) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function downloadText(fileName, text, type = 'text/plain') {
+  saveBlob(fileName, new Blob([text], { type: `${type};charset=utf-8` }));
+}
+
+const downloadHtml = (fileName, html) => downloadText(fileName, html, 'text/html');
+
+/** One page downloads as .html; several download as one website.zip. */
+function downloadSite(pages) {
+  if (pages.length === 1) {
+    downloadHtml(pages[0].name, pages[0].html);
+    return;
+  }
+  const zip = createZip(pages.map((p) => ({ name: p.name, text: p.html })));
+  saveBlob('website.zip', new Blob([zip], { type: 'application/zip' }));
+}
+
+// ---- src/brand.js
+// My Brand Kit: a person's own colours and fonts, applied to any page by colour *role*
+// (background, text, accent, second accent) rather than by exact value.
+
+
+const DEFAULT_BRAND = Object.freeze({
+  name: 'My brand',
+  background: '#ffffff',
+  text: '#111827',
+  accent: '#2563eb',
+  accent2: '#f59e0b',
+  headingFont: 'Fraunces',
+  bodyFont: 'Inter',
+});
+
+const COLOR_ROLES = Object.freeze(['background', 'text', 'accent', 'accent2']);
+
+const LIGHT_MIN = 0.8;
+const DARK_MAX = 0.2;
+const MUTED_MAX_SATURATION = 0.35;
+const NEAR_BLACK = 0.03;
+const MAX_NAME = 40;
+const FONT_NAME = /^[A-Za-z][A-Za-z0-9 _-]{0,59}$/;
+
+function channels(hex) {
+  return [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
+}
+
+function luminance(hex) {
+  const [r, g, b] = channels(hex).map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+function saturation(hex) {
+  const values = channels(hex);
+  const max = Math.max(...values);
+  const min = Math.min(...values);
+  const lightness = (max + min) / 2;
+  if (max === min) return 0;
+  return (max - min) / (1 - Math.abs(2 * lightness - 1));
+}
+
+const isOpaque = (color) => /^#[0-9a-f]{6}$/.test(color);
+
+/** Picks which page colour plays each role. Input: [{ color, count }] sorted by use. */
+function classifyPalette(colors) {
+  const opaque = colors.filter((c) => isOpaque(c.color))
+    .map((c) => ({ ...c, lum: luminance(c.color), sat: saturation(c.color) }));
+  const byUse = (list) => [...list].sort((a, b) => b.count - a.count);
+  const background = byUse(opaque.filter((c) => c.lum >= LIGHT_MIN))[0]?.color ?? null;
+  const text = byUse(opaque.filter((c) => c.lum < DARK_MAX && (c.sat < MUTED_MAX_SATURATION || c.lum < NEAR_BLACK)))[0]?.color ?? null;
+  const accents = byUse(opaque.filter((c) =>
+    c.lum < LIGHT_MIN && c.lum >= NEAR_BLACK && c.sat >= MUTED_MAX_SATURATION && c.color !== text));
+  return { background, text, accent: accents[0]?.color ?? null, accent2: accents[1]?.color ?? null };
+}
+
+const sameName = (a, b) => a.trim().toLowerCase() === b.trim().toLowerCase();
+
+/** The swaps that would put `brand` on a page: { colors: [[from, to]], fonts: [[from, to]] }. */
+function planBrandSwaps(pageColors, pageFonts, brand) {
+  const roles = classifyPalette(pageColors);
+  const colors = COLOR_ROLES
+    .filter((role) => roles[role] && brand[role] && roles[role] !== brand[role])
+    .map((role) => [roles[role], brand[role]]);
+  const targets = [brand.bodyFont, brand.headingFont];
+  const fonts = pageFonts.slice(0, 2)
+    .map((f, i) => [f.family, targets[i]])
+    .filter(([from, to]) => to && !sameName(from, to));
+  return { colors, fonts };
+}
+
+/** Accepts anything (e.g. an imported file) and returns a well-formed brand. */
+function sanitizeBrand(input) {
+  const source = input && typeof input === 'object' ? input : {};
+  const brand = { ...DEFAULT_BRAND };
+  if (typeof source.name === 'string' && source.name.trim()) brand.name = source.name.trim().slice(0, MAX_NAME);
+  for (const role of COLOR_ROLES) {
+    const color = normalizeColor(typeof source[role] === 'string' ? source[role] : '');
+    if (color) brand[role] = color.slice(0, 7);
+  }
+  for (const key of ['headingFont', 'bodyFont']) {
+    if (typeof source[key] === 'string' && FONT_NAME.test(source[key].trim())) brand[key] = source[key].trim();
+  }
+  return Object.freeze(brand);
+}
+
+/** A brand built from a page's current look, filling gaps from the defaults. */
+function brandFromPage(pageColors, pageFonts) {
+  const roles = classifyPalette(pageColors);
+  const picked = Object.fromEntries(COLOR_ROLES.filter((r) => roles[r]).map((r) => [r, roles[r]]));
+  return sanitizeBrand({
+    name: 'My brand',
+    ...picked,
+    bodyFont: pageFonts[0]?.family,
+    headingFont: pageFonts[1]?.family || pageFonts[0]?.family,
+  });
+}
+
+// ---- src/persist.js
+// Autosave to this browser only. Nothing is ever sent anywhere.
+
+
+const PROJECT_KEY = 'unslop:project:v1';
+
+function saveProject(pages, current) {
+  const payload = JSON.stringify({ savedAt: new Date().toISOString(), current, pages: pages.map(({ name, html }) => ({ name, html })) });
+  return storageSet(PROJECT_KEY, payload);
+}
+
+/** The last session, or null. Anything malformed is treated as no session. */
+function loadProject() {
+  const raw = storageGet(PROJECT_KEY);
+  if (!raw) return null;
+  try {
+    const data = JSON.parse(raw);
+    const pages = Array.isArray(data.pages)
+      ? data.pages.filter((p) => p && typeof p.name === 'string' && typeof p.html === 'string')
+      : [];
+    if (!pages.length) return null;
+    const current = Number.isInteger(data.current) && data.current < pages.length ? data.current : 0;
+    return { pages, current, savedAt: String(data.savedAt || '') };
+  } catch {
+    return null;
+  }
+}
+
+const forgetProject = () => storageRemove(PROJECT_KEY);
+
+const BRAND_KEY = 'unslop:brand:v1';
+
+/** The saved brand kit as raw data (sanitise before use), or null. */
+function loadBrandData() {
+  const raw = storageGet(BRAND_KEY);
+  if (!raw) return null;
+  try { return JSON.parse(raw); } catch { return null; }
+}
+
+const saveBrandData = (brand) => storageSet(BRAND_KEY, JSON.stringify(brand));
+
+// ---- src/brand-panel.js
+// The "My brand" card: save your own colours and fonts once, apply them to any AI-made page in one click.
+
+
+
+
+
+
+const ROLE_LABELS = { background: 'Background', text: 'Text', accent: 'Main accent', accent2: 'Second accent' };
+const MAX_IMPORT_BYTES = 20000;
+
+function currentBrand() {
+  const data = loadBrandData();
+  return data ? sanitizeBrand(data) : null;
+}
+
+function persist(brand) {
+  if (!saveBrandData(brand)) toast('Your browser blocked saving. Export the brand file to keep it.', 'warn');
+}
+
+function fontSelect(value, onChange) {
+  const known = FONT_LIBRARY.some((f) => f.family === value);
+  return h('select', { onchange: (e) => onChange(e.target.value) }, [
+    known ? null : h('option', { value, text: value, selected: true }),
+    ...FONT_LIBRARY.map((f) => h('option', { value: f.family, text: `${f.family} (${f.category})`, selected: f.family === value })),
+  ]);
+}
+
+function editDialog(brand, onSave) {
+  let draft = { ...brand };
+  const dialog = h('dialog', { class: 'brand-dialog' });
+  const set = (key, value) => { draft = { ...draft, [key]: value }; };
+  const form = h('form', { method: 'dialog' }, [
+    h('h2', { text: 'My brand' }),
+    h('p', { class: 'muted', text: 'Saved in this browser only. Apply it to any page with one click.' }),
+    field('Name', h('input', { type: 'text', value: draft.name, maxlength: 40, oninput: (e) => set('name', e.target.value) })),
+    h('div', { class: 'field-row' }, COLOR_ROLES.map((role) =>
+      field(ROLE_LABELS[role], h('input', { type: 'color', value: draft[role], oninput: (e) => set(role, e.target.value) })))),
+    h('div', { class: 'field-row' }, [
+      field('Heading font', fontSelect(draft.headingFont, (v) => set('headingFont', v))),
+      field('Body font', fontSelect(draft.bodyFont, (v) => set('bodyFont', v))),
+    ]),
+    h('div', { class: 'button-row end' }, [
+      h('button', { type: 'submit', value: 'cancel', text: 'Cancel' }),
+      h('button', { type: 'submit', value: 'save', class: 'primary', text: 'Save brand' }),
+    ]),
+  ]);
+  form.addEventListener('submit', (e) => { if (e.submitter?.value === 'save') onSave(sanitizeBrand(draft)); });
+  dialog.appendChild(form);
+  dialog.addEventListener('close', () => dialog.remove());
+  document.body.appendChild(dialog);
+  dialog.showModal();
+}
+
+function importBrand(onLoaded) {
+  const input = h('input', { type: 'file', accept: '.json,application/json' });
+  input.addEventListener('change', async () => {
+    const file = input.files[0];
+    if (!file) return;
+    if (file.size > MAX_IMPORT_BYTES) { toast('That file is too big to be a brand file.', 'warn'); return; }
+    try {
+      onLoaded(sanitizeBrand(JSON.parse(await file.text())));
+    } catch {
+      toast('That file is not a valid brand file.', 'warn');
+    }
+  });
+  input.click();
+}
+
+/** Renders the card. `pageLook()` returns { colors, fonts } of the open page; `onApply(brand)` applies it. */
+function renderBrandCard(host, { pageLook, onApply }) {
+  clear(host);
+  const brand = currentBrand();
+  const rerender = () => renderBrandCard(host, { pageLook, onApply });
+  const save = (next) => { persist(next); rerender(); toast(`Saved "${next.name}".`, 'success'); };
+
+  host.appendChild(h('h3', { text: 'My brand' }));
+  if (!brand) {
+    host.appendChild(h('p', { class: 'muted small', text: 'Save your colours and fonts once. Then put them on any AI-made page in one click.' }));
+    host.appendChild(h('div', { class: 'button-row' }, [
+      h('button', { type: 'button', text: 'Use this page\'s look', onclick: () => { const look = pageLook(); save(brandFromPage(look.colors, look.fonts)); } }),
+      h('button', { type: 'button', text: 'Create…', onclick: () => editDialog(sanitizeBrand({}), save) }),
+      h('button', { type: 'button', text: 'Import…', onclick: () => importBrand(save) }),
+    ]));
+    return;
+  }
+  host.appendChild(h('div', { class: 'brand-card' }, [
+    h('div', { class: 'brand-chips' }, COLOR_ROLES.map((role) => h('span', { class: 'swatch-chip small-chip', title: `${ROLE_LABELS[role]}: ${brand[role]}`, style: { background: brand[role] } }))),
+    h('div', { class: 'small' }, [h('b', { text: brand.name }), h('span', { class: 'muted', text: ` · ${brand.headingFont} / ${brand.bodyFont}` })]),
+  ]));
+  host.appendChild(h('div', { class: 'button-row' }, [
+    h('button', { type: 'button', class: 'primary', text: 'Apply my brand', onclick: () => onApply(brand) }),
+    h('button', { type: 'button', text: 'Edit', onclick: () => editDialog(brand, save) }),
+  ]));
+  host.appendChild(h('div', { class: 'button-row' }, [
+    h('button', { type: 'button', class: 'link-button', text: 'Use this page\'s look', onclick: () => { const look = pageLook(); save(brandFromPage(look.colors, look.fonts)); } }),
+    h('button', { type: 'button', class: 'link-button', text: 'Export', onclick: () => downloadText('my-brand.json', JSON.stringify(brand, null, 2), 'application/json') }),
+    h('button', { type: 'button', class: 'link-button', text: 'Import', onclick: () => importBrand(save) }),
+  ]));
+}
+
+// ---- src/pages.js
+// Page names for multi-page sites: match a clicked link to an uploaded page, and name new pages.
+
+const HAS_SCHEME = /^[a-z][a-z0-9+.-]*:/i;
+const HTML_EXT = /\.html?$/i;
+
+function basename(path) {
+  return path.split('/').filter(Boolean).pop() || '';
+}
+
+/** Index of the page a link points to, or -1 when it leaves the site or points nowhere we know. */
+function resolvePageLink(href, pageNames) {
+  if (typeof href !== 'string') return -1;
+  const link = href.trim();
+  if (!link || link.startsWith('#') || link.startsWith('//') || HAS_SCHEME.test(link)) return -1;
+  const path = link.split(/[?#]/)[0].replace(/^(\.\/|\/)+/, '');
+  const lowerNames = pageNames.map((n) => n.toLowerCase());
+  if (path === '') return lowerNames.indexOf('index.html');
+  const exact = lowerNames.indexOf(path.toLowerCase());
+  if (exact !== -1) return exact;
+  return lowerNames.indexOf(basename(path).toLowerCase());
+}
+
+/** A file name that does not clash with existing pages: "about.html" -> "about-2.html". */
+function uniquePageName(name, pageNames) {
+  const withExt = HTML_EXT.test(name) ? name : `${name}.html`;
+  const taken = new Set(pageNames.map((n) => n.toLowerCase()));
+  if (!taken.has(withExt.toLowerCase())) return withExt;
+  const stem = withExt.replace(HTML_EXT, '');
+  const ext = withExt.match(HTML_EXT)[0];
+  for (let i = 2; ; i += 1) {
+    const candidate = `${stem}-${i}${ext}`;
+    if (!taken.has(candidate.toLowerCase())) return candidate;
+  }
+}
+
+// ---- src/app.js
+// The editor controller: pages, undo history, edit/preview modes, theme swaps and export.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const JS_RENDERED = { maxStaticText: 20, minRenderedText: 100 };
+const SAVE_DELAY_MS = 800;
+const EDITOR_MARKS = ['data-unslop-selected', 'data-unslop-hover', 'data-unslop-editing', 'contenteditable'];
+
+/** Turns a page that JavaScript builds into plain HTML: the rendered result, without its scripts. */
+function flattenRendered(renderedHtml) {
+  const doc = new DOMParser().parseFromString(renderedHtml, 'text/html');
+  doc.querySelectorAll('script').forEach((s) => s.remove());
+  return `<!DOCTYPE html>\n${doc.documentElement.outerHTML}`;
+}
+
+function isTypingTarget(target) {
+  return target instanceof HTMLElement && (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName));
+}
+
+function createApp(els) {
+  let pages = [];
+  let histories = [];
+  let runtime = [];
+  let current = 0;
+  let mode = 'edit';
+  let revealOn = false;
+  let doc = null;
+  let editor = null;
+  let saveTimer = null;
+  let renderSeq = 0;
+  let saveWarned = false;
+
+  const canvas = createCanvas(els.stage, { onNavigate });
+  const setPageHtml = (i, html) => { pages = pages.map((p, j) => (j === i ? { ...p, html } : p)); };
+
+  function scheduleSave() {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      if (!saveProject(pages, current) && !saveWarned) {
+        saveWarned = true;
+        toast('Autosave is off here (browser storage is full or blocked). Download your work to keep it.', 'warn');
+      }
+    }, SAVE_DELAY_MS);
+  }
+
+  function updateUndoButtons() {
+    const h0 = histories[current];
+    els.undoButton.disabled = !h0 || !canUndo(h0);
+    els.redoButton.disabled = !h0 || !canRedo(h0);
+  }
+
+  function commit() {
+    if (!doc) return;
+    const html = serializePage(doc);
+    if (html === pages[current].html) return;
+    setPageHtml(current, html);
+    histories[current] = record(histories[current], html);
+    updateUndoButtons();
+    scheduleSave();
+  }
+
+  async function prepare(i) {
+    if (runtime[i] !== undefined) return;
+    const html = pages[i].html;
+    const snap = await probePage(html);
+    if (!snap) { runtime[i] = ''; return; }
+    const builtByScript = staticTextLength(html) <= JS_RENDERED.maxStaticText && snap.renderedText >= JS_RENDERED.minRenderedText;
+    if (builtByScript && snap.renderedHtml) {
+      const flat = flattenRendered(snap.renderedHtml);
+      setPageHtml(i, flat);
+      histories[i] = record(histories[i], flat);
+      runtime[i] = '';
+      toast(`${pages[i].name} is built by JavaScript, so it was converted to plain HTML you can edit. Undo restores the original.`, 'warn');
+      return;
+    }
+    runtime[i] = snap.runtimeCss;
+  }
+
+  function refreshPanels() {
+    renderPages(els.pagesList, pages, current, { onOpen: (i) => show(i), onRemove: removePage });
+    if (mode !== 'edit' || !doc) {
+      clear(els.brandHost);
+      for (const host of [els.themeHost, els.sectionsHost]) {
+        clear(host);
+        host.appendChild(h('p', { class: 'muted', text: 'Switch to Edit to change this page.' }));
+      }
+      return;
+    }
+    renderBrandCard(els.brandHost, { pageLook, onApply: applyBrand });
+    renderTheme(els.themeHost, doc, { onColor, onFont, hasRuntimeCss: Boolean(runtime[current]) });
+    renderSections(els.sectionsHost, doc, { onPick: pickSection, revealOn, onReveal });
+  }
+
+  function inspect(el) {
+    if (mode !== 'edit') {
+      clear(els.inspector);
+      els.inspector.appendChild(h('div', { class: 'empty-note' }, [
+        h('p', { text: 'Preview mode: the page runs like the real site.' }),
+        h('p', { class: 'muted', text: 'Click links to move between your pages, then click Edit to change the page you are on.' }),
+      ]));
+      return;
+    }
+    renderInspector(els.inspector, el, { commit, actions: elementActions(el) });
+  }
+
+  function elementActions(el) {
+    return {
+      selectParent: () => { const p = el.parentElement; if (p && p !== doc.documentElement) editor.select(p); },
+      duplicate: () => {
+        const copy = el.cloneNode(true);
+        [copy, ...copy.querySelectorAll('*')].forEach((n) => EDITOR_MARKS.forEach((a) => n.removeAttribute(a)));
+        el.after(copy);
+        commit();
+        editor.select(copy);
+      },
+      move: (dir) => {
+        const sibling = dir < 0 ? el.previousElementSibling : el.nextElementSibling;
+        if (!sibling) return;
+        if (dir < 0) sibling.before(el); else sibling.after(el);
+        commit();
+        inspect(el);
+      },
+      hide: () => {
+        el.style.setProperty('display', 'none');
+        editor.clear();
+        commit();
+        refreshPanels();
+        toast('Hidden. Turn on "Show hidden parts" on the left to find it again.');
+      },
+      remove: removeSelected,
+    };
+  }
+
+  function removeSelected() {
+    const el = editor?.selected;
+    if (!el || el === doc.body) return;
+    editor.clear();
+    el.remove();
+    commit();
+    refreshPanels();
+    toast('Deleted. Press Ctrl/Cmd + Z to undo.');
+  }
+
+  function pickSection(el) {
+    editor.select(el);
+    el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }
+
+  function onReveal(on) {
+    revealOn = on;
+    if (doc) doc.documentElement.toggleAttribute('data-unslop-reveal', on);
+  }
+
+  function onColor(from, to) {
+    const n = swapColor(doc, from, to);
+    commit();
+    refreshPanels();
+    toast(n ? `Changed ${from} to ${to} in ${n} place${n === 1 ? '' : 's'}.` : 'That colour could not be changed here.');
+  }
+
+  function pageLook() {
+    const css = readThemeCss(doc);
+    return { colors: extractColors(css), fonts: extractFonts(css) };
+  }
+
+  function addBrandFonts(brand) {
+    ensureFontLink(doc, brand.bodyFont);
+    ensureFontLink(doc, brand.headingFont);
+    const style = doc.createElement('style');
+    style.textContent = `body{font-family:${fontStack(brand.bodyFont)}}h1,h2,h3,h4,h5,h6{font-family:${fontStack(brand.headingFont)}}`;
+    (doc.head || doc.documentElement).appendChild(style);
+  }
+
+  function applyBrand(brand) {
+    const look = pageLook();
+    const plan = planBrandSwaps(look.colors, look.fonts, brand);
+    if (!look.fonts.length) addBrandFonts(brand);
+    if (!plan.colors.length && !plan.fonts.length && look.fonts.length) {
+      toast('This page already uses your brand.');
+      return;
+    }
+    applySwapPlan(doc, plan, look.colors.map((c) => c.color));
+    commit();
+    refreshPanels();
+    const fontsDone = look.fonts.length ? plan.fonts.length : 2;
+    toast(`Applied "${brand.name}": ${plan.colors.length} colour${plan.colors.length === 1 ? '' : 's'} and ${fontsDone} font${fontsDone === 1 ? '' : 's'}. Undo if you don't like it.`, 'success');
+  }
+
+  function onFont(from, to) {
+    const n = swapFont(doc, from, to);
+    commit();
+    refreshPanels();
+    toast(n ? `Replaced ${from} with ${to} across the page.` : 'That font could not be changed here.');
+  }
+
+  async function show(i) {
+    const seq = ++renderSeq;
+    current = i;
+    editor?.destroy();
+    editor = null;
+    doc = null;
+    els.showWelcome(false);
+    updateUndoButtons();
+    if (mode === 'preview') {
+      canvas.showPreview(pages[i].html);
+      refreshPanels();
+      inspect(null);
+      return;
+    }
+    els.setBusy(true);
+    await prepare(i);
+    if (seq !== renderSeq) return;
+    const nextDoc = await canvas.showEdit(pages[i].html, runtime[i]);
+    if (seq !== renderSeq) return;
+    doc = nextDoc;
+    doc.documentElement.toggleAttribute('data-unslop-reveal', revealOn);
+    editor = attachEditor(doc, { onSelect: inspect, onChange: commit, onKey: handleKey });
+    refreshPanels();
+    inspect(null);
+    updateUndoButtons();
+    els.setBusy(false);
+  }
+
+  function onNavigate(href) {
+    const i = resolvePageLink(href, pages.map((p) => p.name));
+    if (i === -1) {
+      const external = /^([a-z][a-z0-9+.-]*:|\/\/)/i.test(href);
+      toast(external ? `That link leaves your site (${href}), so it is not opened in preview.` : `"${href}" is not one of your pages. Add it with Open.`);
+      return;
+    }
+    if (i === current) return;
+    show(i);
+    toast(`Now on ${pages[i].name}. Click Edit to change this page.`);
+  }
+
+  function load(newPages, { append = false } = {}) {
+    const base = append ? pages : [];
+    const names = base.map((p) => p.name);
+    const added = newPages.map((p) => {
+      const name = uniquePageName(p.name || 'page.html', names);
+      names.push(name);
+      return { name, html: p.html };
+    });
+    pages = [...base, ...added];
+    histories = [...(append ? histories : []), ...added.map((p) => createHistory(p.html))];
+    runtime = [...(append ? runtime : []), ...added.map(() => undefined)];
+    scheduleSave();
+    return show(base.length);
+  }
+
+  function removePage(i) {
+    if (!window.confirm(`Remove ${pages[i].name} from this project? Files on your computer are not touched.`)) return;
+    pages = pages.filter((_, j) => j !== i);
+    histories = histories.filter((_, j) => j !== i);
+    runtime = runtime.filter((_, j) => j !== i);
+    scheduleSave();
+    show(Math.min(current, pages.length - 1));
+  }
+
+  function applyHistory(step) {
+    const next = step(histories[current]);
+    if (next === histories[current]) return;
+    histories[current] = next;
+    setPageHtml(current, next.present);
+    scheduleSave();
+    show(current);
+  }
+
+  function setMode(next) {
+    if (next === mode || !pages.length) return;
+    editor?.finish();
+    mode = next;
+    els.setMode(next);
+    show(current);
+  }
+
+  function handleKey(e) {
+    const mod = e.metaKey || e.ctrlKey;
+    const key = e.key.toLowerCase();
+    if (mod && key === 'z') { e.preventDefault(); applyHistory(e.shiftKey ? redo : undo); return; }
+    if (mod && key === 'y') { e.preventDefault(); applyHistory(redo); return; }
+    if (mod && key === 's') { e.preventDefault(); exportPage(); return; }
+    if ((e.key === 'Delete' || e.key === 'Backspace') && editor?.selected) { e.preventDefault(); removeSelected(); return; }
+    if (e.key === 'Escape') editor?.clear();
+  }
+
+  function exportPage() {
+    if (!pages.length) return;
+    editor?.finish();
+    downloadHtml(pages[current].name, pages[current].html);
+    toast(`Downloaded ${pages[current].name}.`, 'success');
+  }
+
+  function exportAll() {
+    if (!pages.length) return;
+    editor?.finish();
+    downloadSite(pages);
+    toast(pages.length > 1 ? `Downloaded ${pages.length} pages as website.zip.` : `Downloaded ${pages[0].name}.`, 'success');
+  }
+
+  function copyHtml() {
+    if (!pages.length) return;
+    editor?.finish();
+    navigator.clipboard.writeText(pages[current].html)
+      .then(() => toast('HTML copied to the clipboard.', 'success'))
+      .catch(() => toast('Your browser blocked the clipboard. Use Download instead.', 'warn'));
+  }
+
+  return {
+    load,
+    setMode,
+    undo: () => applyHistory(undo),
+    redo: () => applyHistory(redo),
+    exportPage,
+    exportAll,
+    copyHtml,
+    setDevice: (px) => canvas.setWidth(px),
+    handleKey: (e) => { if (!isTypingTarget(e.target)) handleKey(e); },
+    hasProject: () => pages.length > 0,
+    currentHtml: () => pages[current]?.html ?? '',
+    pageNames: () => pages.map((p) => p.name),
+  };
+}
+
+// ---- src/loader.js
+// Reading what people drop in: HTML pages plus the CSS, JS and images next to them.
+// Assets are inlined into each page so the result is self-contained and exports cleanly.
+
+const HTML_FILE = /\.html?$/i;
+const CSS_FILE = /\.css$/i;
+const JS_FILE = /\.m?js$/i;
+const IMAGE_FILE = /\.(png|jpe?g|gif|webp|svg|avif|ico|bmp)$/i;
+const CSS_URL = /url\(\s*(['"]?)([^'")]+)\1\s*\)/g;
+
+const readText = (file) => file.text();
+
+function readDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
+const fileKey = (path) => path.replace(/^(\.\/|\/)+/, '').toLowerCase();
+const baseName = (path) => path.split('/').pop();
+
+function entryFile(entry) {
+  return new Promise((resolve, reject) => entry.file(resolve, reject));
+}
+
+function readDirectory(reader) {
+  return new Promise((resolve, reject) => reader.readEntries(resolve, reject));
+}
+
+async function walkEntry(entry, prefix) {
+  if (entry.isFile) {
+    const file = await entryFile(entry);
+    return [{ file, path: prefix + file.name }];
+  }
+  const reader = entry.createReader();
+  const found = [];
+  for (let batch = await readDirectory(reader); batch.length; batch = await readDirectory(reader)) {
+    for (const child of batch) found.push(...(await walkEntry(child, `${prefix}${entry.name}/`)));
+  }
+  return found;
+}
+
+/** Files from a drop, including whole folders, as [{ file, path }]. */
+async function filesFromDrop(dataTransfer) {
+  const entries = [...(dataTransfer.items || [])]
+    .map((item) => (item.webkitGetAsEntry ? item.webkitGetAsEntry() : null))
+    .filter(Boolean);
+  if (!entries.length) return [...dataTransfer.files].map((file) => ({ file, path: file.name }));
+  const nested = await Promise.all(entries.map((e) => walkEntry(e, '')));
+  return nested.flat();
+}
+
+const filesFromInput = (fileList) =>
+  [...fileList].map((file) => ({ file, path: file.webkitRelativePath || file.name }));
+
+async function readAssets(items) {
+  const assets = new Map();
+  for (const { file, path } of items) {
+    let asset = null;
+    if (CSS_FILE.test(path)) asset = { kind: 'css', text: await readText(file) };
+    else if (JS_FILE.test(path)) asset = { kind: 'js', text: await readText(file) };
+    else if (IMAGE_FILE.test(path)) asset = { kind: 'image', dataUrl: await readDataUrl(file) };
+    if (!asset) continue;
+    assets.set(fileKey(path), asset);
+    if (!assets.has(fileKey(baseName(path)))) assets.set(fileKey(baseName(path)), asset);
+  }
+  return assets;
+}
+
+function findAsset(ref, assets) {
+  if (!ref || /^([a-z][a-z0-9+.-]*:|\/\/|#)/i.test(ref)) return null;
+  const clean = ref.split(/[?#]/)[0].replace(/\.\.\//g, '');
+  return assets.get(fileKey(clean)) || assets.get(fileKey(baseName(clean))) || null;
+}
+
+function inlineCssUrls(css, assets) {
+  return css.replace(CSS_URL, (whole, quote, ref) => {
+    const asset = findAsset(ref, assets);
+    return asset?.kind === 'image' ? `url("${asset.dataUrl}")` : whole;
+  });
+}
+
+function inlineStylesheets(doc, assets) {
+  let count = 0;
+  for (const link of doc.querySelectorAll('link[rel~="stylesheet"][href]')) {
+    const asset = findAsset(link.getAttribute('href'), assets);
+    if (asset?.kind !== 'css') continue;
+    const style = doc.createElement('style');
+    style.textContent = inlineCssUrls(asset.text, assets);
+    link.replaceWith(style);
+    count += 1;
+  }
+  return count;
+}
+
+function inlineScripts(doc, assets) {
+  let count = 0;
+  for (const script of doc.querySelectorAll('script[src]')) {
+    const asset = findAsset(script.getAttribute('src'), assets);
+    if (asset?.kind !== 'js') continue;
+    script.removeAttribute('src');
+    script.textContent = asset.text.replace(/<\/script/gi, '<\\/script');
+    count += 1;
+  }
+  return count;
+}
+
+function inlineImages(doc, assets) {
+  let count = 0;
+  const targets = [['img', 'src'], ['source', 'src'], ['video', 'poster'], ['link[rel~="icon"]', 'href'], ['image', 'href']];
+  for (const [selector, attr] of targets) {
+    for (const el of doc.querySelectorAll(`${selector}[${attr}]`)) {
+      const asset = findAsset(el.getAttribute(attr), assets);
+      if (asset?.kind !== 'image') continue;
+      el.setAttribute(attr, asset.dataUrl);
+      el.removeAttribute('srcset');
+      count += 1;
+    }
+  }
+  for (const el of doc.querySelectorAll('[style*="url("]')) {
+    const next = inlineCssUrls(el.getAttribute('style'), assets);
+    if (next !== el.getAttribute('style')) { el.setAttribute('style', next); count += 1; }
+  }
+  for (const style of doc.querySelectorAll('style')) {
+    const next = inlineCssUrls(style.textContent, assets);
+    if (next !== style.textContent) { style.textContent = next; count += 1; }
+  }
+  return count;
+}
+
+function serializeParsed(doc, original) {
+  const hasDoctype = /^\s*<!doctype/i.test(original);
+  return (hasDoctype ? '<!DOCTYPE html>\n' : '') + doc.documentElement.outerHTML;
+}
+
+/** Inlines matching local assets into the page. Returns the original text when nothing matched. */
+function inlineAssets(html, assets) {
+  if (!assets.size) return html;
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const changed = inlineStylesheets(doc, assets) + inlineScripts(doc, assets) + inlineImages(doc, assets);
+  return changed ? serializeParsed(doc, html) : html;
+}
+
+/** Everything dropped -> { pages: [{ name, html }], skipped: [paths] }. */
+async function loadDroppedFiles(items) {
+  const assets = await readAssets(items);
+  const htmlItems = items.filter(({ path }) => HTML_FILE.test(path));
+  const pages = [];
+  for (const { file, path } of htmlItems) {
+    pages.push({ name: baseName(path), html: inlineAssets(await readText(file), assets) });
+  }
+  const known = (path) => HTML_FILE.test(path) || CSS_FILE.test(path) || JS_FILE.test(path) || IMAGE_FILE.test(path);
+  return { pages, skipped: items.filter(({ path }) => !known(path)).map(({ path }) => path) };
+}
+
+// ---- src/sample-site.js
+// A small original two-page demo site with the usual "AI look" (purple gradient, emoji cards),
+// used by the "Try an example" button. Kept in JS so it also works in the offline single-file build.
+
+const SHARED_STYLE = `
+  :root { --brand: #7c3aed; --brand-2: #db2777; --ink: #1f2937; --muted: #6b7280; --paper: #faf5ff; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: 'Poppins', sans-serif; color: #1f2937; background: #faf5ff; }
+  nav { display: flex; justify-content: space-between; align-items: center; padding: 20px 48px; }
+  nav a { color: #1f2937; text-decoration: none; margin-left: 24px; font-weight: 500; }
+  .logo { font-weight: 800; font-size: 22px; color: #7c3aed; }
+  .hero { text-align: center; padding: 96px 24px; background: linear-gradient(135deg, #7c3aed, #db2777); color: #ffffff; }
+  .hero h1 { font-size: 56px; margin: 0 0 16px; }
+  .hero p { font-size: 20px; opacity: 0.9; max-width: 640px; margin: 0 auto 32px; }
+  .btn { display: inline-block; background: #ffffff; color: #7c3aed; padding: 14px 28px; border-radius: 999px; font-weight: 700; text-decoration: none; }
+  .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; padding: 72px 48px; }
+  .card { background: #ffffff; border-radius: 16px; padding: 28px; box-shadow: 0 10px 30px rgba(124, 58, 237, 0.12); }
+  .card h3 { margin: 12px 0 8px; }
+  .card p, .muted { color: #6b7280; }
+  .tabs { text-align: center; padding: 24px 48px 80px; }
+  .tab-buttons button { border: 1px solid #7c3aed; background: #ffffff; color: #7c3aed; padding: 10px 20px; border-radius: 999px; margin: 0 6px; cursor: pointer; }
+  .tab-panel { display: none; margin-top: 24px; }
+  .tab-panel.active { display: block; }
+  .price { font-size: 44px; font-weight: 800; color: #7c3aed; }
+  footer { text-align: center; padding: 32px; color: #6b7280; }
+`;
+
+const FONT_LINK = '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700;800&display=swap">';
+
+const nav = `<nav><span class="logo">✦ Nimbus</span><div><a href="index.html">Home</a><a href="about.html">About</a><a href="#pricing">Pricing</a></div></nav>`;
+
+const INDEX = `<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nimbus: Your AI-powered productivity companion</title>${FONT_LINK}<style>${SHARED_STYLE}</style></head>
+<body>
+${nav}
+<header class="hero">
+  <h1>Supercharge your workflow with AI ✨</h1>
+  <p>Nimbus is the all-in-one, AI-powered platform that helps teams unlock their full potential and achieve more.</p>
+  <a class="btn" href="#pricing">Get started for free 🚀</a>
+</header>
+<section class="features" id="features">
+  <div class="card"><div>⚡</div><h3>Lightning fast</h3><p>Seamlessly streamline your tasks with cutting-edge automation.</p></div>
+  <div class="card"><div>🔒</div><h3>Secure by design</h3><p>Enterprise-grade security that scales with your ambitions.</p></div>
+  <div class="card"><div>🤝</div><h3>Built for teams</h3><p>Collaborate effortlessly and elevate every project to the next level.</p></div>
+</section>
+<section class="tabs" id="pricing">
+  <h2>Simple, transparent pricing</h2>
+  <div class="tab-buttons"><button data-tab="monthly">Monthly</button><button data-tab="yearly">Yearly</button></div>
+  <div class="tab-panel active" id="monthly"><p class="price">$19/mo</p><p class="muted">Billed monthly. Cancel anytime.</p></div>
+  <div class="tab-panel" id="yearly"><p class="price">$190/yr</p><p class="muted">Two months free when you pay yearly.</p></div>
+</section>
+<footer>© 2026 Nimbus Labs. Made with 💜 and AI.</footer>
+<script>
+document.querySelectorAll('[data-tab]').forEach(function (b) {
+  b.addEventListener('click', function () {
+    document.querySelectorAll('.tab-panel').forEach(function (p) { p.classList.toggle('active', p.id === b.dataset.tab); });
+  });
+});
+<\/script>
+</body></html>`;
+
+const ABOUT = `<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>About Nimbus</title>${FONT_LINK}<style>${SHARED_STYLE}</style></head>
+<body>
+${nav}
+<header class="hero">
+  <h1>About us 💡</h1>
+  <p>We are a passionate team on a mission to revolutionize the way the world works.</p>
+</header>
+<section class="features">
+  <div class="card"><h3>Our story</h3><p>Founded in 2026, Nimbus was born from a simple idea: work should feel effortless.</p></div>
+  <div class="card"><h3>Our values</h3><p>Innovation, integrity and impact guide everything we do.</p></div>
+  <div class="card"><h3>Join us</h3><p>We are always looking for talented people to join our journey.</p></div>
+</section>
+<footer>© 2026 Nimbus Labs. Made with 💜 and AI.</footer>
+</body></html>`;
+
+const SAMPLE_PAGES = Object.freeze([
+  Object.freeze({ name: 'index.html', html: INDEX }),
+  Object.freeze({ name: 'about.html', html: ABOUT }),
+]);
+
+// ---- src/main.js
+// Start-up: wires the page's buttons, drag and drop, paste and shortcuts to the editor.
+
+
+
+
+
+
+const HINT_KEY = 'unslop:hint-dismissed';
+const DEVICE_WIDTHS = { desktop: null, tablet: 820, mobile: 390 };
+const $ = (id) => document.getElementById(id);
+
+const app = createApp({
+  stage: $('stage'),
+  pagesList: $('pages-list'),
+  themeHost: $('theme'),
+  brandHost: $('brand'),
+  sectionsHost: $('sections'),
+  inspector: $('inspector'),
+  undoButton: $('undo'),
+  redoButton: $('redo'),
+  showWelcome: (on) => {
+    $('welcome').hidden = !on;
+    document.body.classList.toggle('has-project', !on);
+  },
+  setBusy: (on) => $('stage').classList.toggle('busy', on),
+  setMode: (mode) => {
+    for (const b of document.querySelectorAll('[data-mode]')) b.setAttribute('aria-pressed', String(b.dataset.mode === mode));
+    document.body.dataset.mode = mode;
+  },
+});
+
+async function openItems(items) {
+  if (!items.length) return;
+  try {
+    const { pages, skipped } = await loadDroppedFiles(items);
+    if (!pages.length) {
+      toast('No .html file found. Drop an HTML page, or a folder that contains one.', 'warn');
+      return;
+    }
+    await app.load(pages, { append: app.hasProject() });
+    if (skipped.length) toast(`Skipped ${skipped.length} file${skipped.length === 1 ? '' : 's'} that are not HTML, CSS, JS or images.`);
+  } catch (err) {
+    console.error('unslop: could not open files', err);
+    toast('Those files could not be opened. Try one .html file first.', 'error');
+  }
+}
+
+function wireOpening() {
+  const fileInput = $('file-input');
+  const folderInput = $('folder-input');
+  fileInput.addEventListener('change', () => { openItems(filesFromInput(fileInput.files)); fileInput.value = ''; });
+  folderInput.addEventListener('change', () => { openItems(filesFromInput(folderInput.files)); folderInput.value = ''; });
+  for (const b of document.querySelectorAll('[data-action="open-files"]')) b.addEventListener('click', () => fileInput.click());
+  for (const b of document.querySelectorAll('[data-action="open-folder"]')) b.addEventListener('click', () => folderInput.click());
+  for (const b of document.querySelectorAll('[data-action="sample"]')) b.addEventListener('click', () => app.load(SAMPLE_PAGES, { append: false }));
+  for (const b of document.querySelectorAll('[data-action="paste"]')) b.addEventListener('click', () => { $('paste-text').value = ''; $('paste-dialog').showModal(); });
+
+  $('paste-form').addEventListener('submit', (e) => {
+    const html = $('paste-text').value.trim();
+    if (e.submitter?.value !== 'open') return;
+    if (!html.includes('<')) {
+      e.preventDefault();
+      toast('That does not look like HTML. Paste the full code of your page.', 'warn');
+      return;
+    }
+    app.load([{ name: 'index.html', html }], { append: app.hasProject() });
+  });
+
+  const saved = loadProject();
+  const restore = $('restore');
+  if (saved) {
+    restore.hidden = false;
+    restore.textContent = `Restore last session (${saved.pages.length} page${saved.pages.length === 1 ? '' : 's'})`;
+    restore.addEventListener('click', () => app.load(saved.pages, { append: false }));
+  }
+}
+
+function wireDragAndDrop() {
+  let depth = 0;
+  const overlay = $('drop-overlay');
+  window.addEventListener('dragenter', (e) => { e.preventDefault(); depth += 1; overlay.hidden = false; });
+  window.addEventListener('dragleave', () => { depth = Math.max(0, depth - 1); if (!depth) overlay.hidden = true; });
+  window.addEventListener('dragover', (e) => e.preventDefault());
+  window.addEventListener('drop', async (e) => {
+    e.preventDefault();
+    depth = 0;
+    overlay.hidden = true;
+    openItems(await filesFromDrop(e.dataTransfer));
+  });
+}
+
+function wireToolbar() {
+  for (const b of document.querySelectorAll('[data-mode]')) b.addEventListener('click', () => app.setMode(b.dataset.mode));
+  for (const b of document.querySelectorAll('[data-device]')) {
+    b.addEventListener('click', () => {
+      app.setDevice(DEVICE_WIDTHS[b.dataset.device]);
+      for (const other of document.querySelectorAll('[data-device]')) other.setAttribute('aria-pressed', String(other === b));
+    });
+  }
+  $('undo').addEventListener('click', app.undo);
+  $('redo').addEventListener('click', app.redo);
+  $('export-page').addEventListener('click', app.exportPage);
+  $('export-all').addEventListener('click', app.exportAll);
+  $('copy-html').addEventListener('click', app.copyHtml);
+  document.addEventListener('keydown', app.handleKey);
+}
+
+function wireHint() {
+  const hint = $('hint');
+  if (storageGet(HINT_KEY) === '1') hint.hidden = true;
+  $('hint-close').addEventListener('click', () => { hint.hidden = true; storageSet(HINT_KEY, '1'); });
+  $('hint-show').addEventListener('click', () => { hint.hidden = false; });
+}
+
+wireOpening();
+wireDragAndDrop();
+wireToolbar();
+wireHint();
+
+})();
+</script>
+</body>
+</html>

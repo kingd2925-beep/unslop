@@ -20,7 +20,7 @@ function hexOf(value, fallback = '#000000') {
   return hex ? hex.slice(0, 7) : fallback;
 }
 
-const firstFamily = (value) => (value || '').split(',')[0].trim().replace(/^["']|["']$/g, '');
+const leadingFamily = (value) => (value || '').split(',')[0].trim().replace(/^["']|["']$/g, '');
 
 function readImageFile(file) {
   return new Promise((resolve, reject) => {
@@ -65,7 +65,7 @@ export function renderInspector(panel, el, { commit, actions }) {
 }
 
 function textSection(el, cs, setStyle, doc) {
-  const current = firstFamily(cs.fontFamily);
+  const current = leadingFamily(cs.fontFamily);
   const fontSelect = h('select', {
     onchange: (e) => { ensureFontLink(doc, e.target.value); setStyle('font-family', fontStack(e.target.value)); },
   }, [
