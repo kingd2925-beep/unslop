@@ -37,6 +37,14 @@ test('planBrandSwaps maps each found role to the brand colour, skipping equal on
   ]);
 });
 
+test('planBrandSwaps also moves leftover light tints to the brand background, but keeps pure white', () => {
+  const tinted = [...page, { color: '#ede9fe', count: 3 }, { color: '#f5f0ff', count: 1 }];
+  const brand = { ...DEFAULT_BRAND, background: '#f3f4f0', text: '#1f2937', accent: '#ff4b2b', accent2: '#c2410c' };
+  const plan = planBrandSwaps(tinted, [], brand);
+  assert.deepEqual(plan.colors.filter(([, to]) => to === '#f3f4f0').map(([from]) => from).sort(), ['#ede9fe', '#f5f0ff', '#faf5ff']);
+  assert.equal(plan.colors.some(([from]) => from === '#ffffff'), false);
+});
+
 test('planBrandSwaps maps the most used font to body and the next to headings', () => {
   const brand = { ...DEFAULT_BRAND, bodyFont: 'Inter', headingFont: 'Fraunces' };
   const fonts = [{ family: 'Poppins', count: 5 }, { family: 'Playfair Display', count: 2 }];

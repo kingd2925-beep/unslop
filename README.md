@@ -10,10 +10,12 @@ sections, then download clean HTML. No account, no upload, no build step. It run
 **Works with:** Claude artifacts · ChatGPT canvas · Gemini · v0 · Lovable · Bolt · Cursor · Windsurf ·
 Tailwind CDN pages · any static HTML/CSS site or landing page.
 
-**[Open unslop →](https://kingd2925-beep.github.io/unslop/)** &nbsp;·&nbsp;
+[![unslop: your AI made a website. Make it yours.](docs/hero.png)](https://kingd2925-beep.github.io/unslop/)
+
+**[▶ Try it now, free, in your browser](https://kingd2925-beep.github.io/unslop/)** &nbsp;·&nbsp;
 **[Download the offline version](https://github.com/kingd2925-beep/unslop/raw/main/dist/unslop.html)** (one file, double-click to open)
 
-![Editing an AI-made page in unslop](docs/editing.png)
+![Drop in an AI-made page, try a look in one click, type a new headline, preview it](docs/demo.gif)
 
 ## Why
 
@@ -23,6 +25,7 @@ you would in a slide or a doc.
 
 ## What you can do
 
+- **Try a look in one click.** Studio, Electric, Editorial or Sunset: new colours by role (background, text, accents) and a new font pairing, checked for readable contrast.
 - **Click any text and type.** Enter finishes, Shift+Enter adds a line, pasting drops the formatting junk.
 - **Change a colour or font once, everywhere.** unslop reads the page's palette and fonts. Pick a new value and every place that used it updates.
 - **My Brand Kit.** Save your own colours and fonts once, in your browser. Then press *Apply my brand* on any AI-made page: unslop works out which colour is the background, the text and the accents, and swaps in yours. Export the kit as a small file to use it on another computer.
@@ -38,7 +41,9 @@ you would in a slide or a doc.
 - **Autosave** in your browser, with *Restore last session* on the start screen (online version; the offline file deliberately saves nothing, see [SECURITY.md](SECURITY.md)).
 - **Fonts for everyone,** including Hindi and Devanagari faces (Hind, Mukta, Noto Sans Devanagari, Tiro Devanagari Hindi).
 
-![Applying a saved brand to an AI-made page](docs/brand-applied.png)
+![The same AI-made page before and after one click](docs/showcase.png)
+
+![The unslop editor: pages and looks on the left, the page in the middle, styling on the right](docs/editor.png)
 
 ## How to use it
 
@@ -124,7 +129,7 @@ npm run serve        # serves the editor at http://localhost:8765
 | `src/` | The editor. `app.js` is the controller, `canvas.js` owns the sandboxed frames, `editor.js` handles selection and typing, `theme.js` / `brand.js` hold the pure logic. |
 | `tests/unit/` | Pure-logic tests (colours, theme swaps, brand roles, undo, zip). |
 | `tests/e2e/` | Browser tests, including the security checks and the offline build. |
-| `scripts/` | `build.mjs` (single-file build) and `screenshots.mjs`. |
+| `scripts/` | `build.mjs` (single-file build) and `media.mjs` (README images, social card, demo GIF). |
 
 A ready GitHub Actions workflow that runs all of the above lives in `docs/ci-workflow.yml`
 (copy it to `.github/workflows/ci.yml` to switch it on).

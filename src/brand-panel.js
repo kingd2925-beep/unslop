@@ -1,7 +1,7 @@
 // The "My brand" card: save your own colours and fonts once, apply them to any AI-made page in one click.
 
 import { h, clear, field, toast } from './ui.js';
-import { COLOR_ROLES, sanitizeBrand, brandFromPage } from './brand.js';
+import { COLOR_ROLES, BRAND_PRESETS, sanitizeBrand, brandFromPage } from './brand.js';
 import { loadBrandData, saveBrandData, isOfflineFile } from './persist.js';
 import { FONT_LIBRARY } from './fonts.js';
 import { downloadText } from './exporter.js';
@@ -74,9 +74,20 @@ function importBrand(onLoaded) {
   input.click();
 }
 
+/** One-click ready-made looks, each chip showing its own colours. */
+export function presetChips(onPick) {
+  return h('div', { class: 'preset-row', role: 'group', 'aria-label': 'Try a look' }, BRAND_PRESETS.map((preset) =>
+    h('button', { type: 'button', class: 'preset-chip', 'data-preset': preset.name, title: `${preset.headingFont} / ${preset.bodyFont}`, onclick: () => onPick(preset) }, [
+      h('span', { class: 'preset-dots', 'aria-hidden': 'true' }, [preset.accent, preset.accent2, preset.text].map((c) => h('i', { style: { background: c } }))),
+      preset.name,
+    ])));
+}
+
 /** Renders the card. `pageLook()` returns { colors, fonts } of the open page; `onApply(brand)` applies it. */
 export function renderBrandCard(host, { pageLook, onApply }) {
   clear(host);
+  host.appendChild(h('h3', { text: 'Try a look' }));
+  host.appendChild(presetChips(onApply));
   const brand = currentBrand();
   const rerender = () => renderBrandCard(host, { pageLook, onApply });
   const save = (next) => { persist(next); rerender(); toast(`Saved "${next.name}".`, 'success'); };

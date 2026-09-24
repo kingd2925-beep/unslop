@@ -45,7 +45,7 @@ export async function newEditor(browser, url, { initScript } = {}) {
 
 /** Opens raw HTML through the Paste dialog and waits for the edit frame. */
 export async function pasteHtml(page, html) {
-  await page.locator('.welcome [data-action="paste"]').click();
+  await page.locator('.hero [data-action="paste"]').click();
   await page.fill('#paste-text', html);
   await page.click('#paste-form button[value="open"]');
   await page.waitForFunction(() => {

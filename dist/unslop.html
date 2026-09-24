@@ -12,173 +12,282 @@
   <meta property="og:title" content="unslop · edit any AI-generated website, no code">
   <meta property="og:description" content="Drop in the HTML your AI made. Click to change text, fonts, colors and images. Apply your own brand in one click. Free, open source, private.">
   <meta property="og:url" content="https://kingd2925-beep.github.io/unslop/">
-  <meta property="og:image" content="https://kingd2925-beep.github.io/unslop/docs/editing.png">
+  <meta property="og:image" content="https://kingd2925-beep.github.io/unslop/docs/social-preview.png">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="unslop · edit any AI-generated website, no code">
   <meta name="twitter:description" content="Drop in the HTML your AI made and make it yours: text, fonts, colors, images, your brand. Free and open source.">
-  <meta name="twitter:image" content="https://kingd2925-beep.github.io/unslop/docs/editing.png">
+  <meta name="twitter:image" content="https://kingd2925-beep.github.io/unslop/docs/social-preview.png">
   <script type="application/ld+json">
   {"@context":"https://schema.org","@type":"SoftwareApplication","name":"unslop","applicationCategory":"DesignApplication","operatingSystem":"Any (web browser)","url":"https://kingd2925-beep.github.io/unslop/","description":"Free, open-source visual editor for AI-generated websites. Edit text, fonts, colors and images of HTML made by Claude, ChatGPT, Gemini, v0, Lovable or Bolt, then download clean HTML.","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"author":{"@type":"Person","name":"Aryan Gupta"},"license":"https://opensource.org/licenses/MIT"}
   </script>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%237c3aed'/%3E%3Cpath d='M18 20v14a14 14 0 0 0 28 0V20' fill='none' stroke='white' stroke-width='7' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Instrument+Sans:wght@400..700&family=Martian+Mono:wght@400;500&display=swap">
   <style>
+/* unslop: ink, paper and one acid accent. Display: Bricolage Grotesque. Text: Instrument Sans. Labels: Martian Mono. */
 :root {
-  --bg: #f6f5f2;
-  --panel: #ffffff;
-  --ink: #1c1b22;
-  --muted: #6c6a75;
-  --line: #e6e3dc;
-  --accent: #6d28d9;
-  --accent-ink: #ffffff;
-  --accent-soft: #efe9fb;
-  --warn: #b45309;
-  --danger: #b91c1c;
-  --ok: #047857;
-  --stage: #e9e7e1;
-  --radius: 10px;
-  --topbar-h: 56px;
-  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --paper: #f2f2ec;
+  --paper-2: #e7e7df;
+  --panel: #fafaf6;
+  --ink: #0e0f13;
+  --ink-2: #3a3c44;
+  --ink-3: #74767e;
+  --line: rgba(14, 15, 19, 0.12);
+  --line-strong: rgba(14, 15, 19, 0.28);
+  --lime: #d4ff3f;
+  --lime-deep: #b8e81a;
+  --blue: #3f5bff;
+  --danger: #d92d20;
+  --ok: #0f9960;
+  --warn: #c2410c;
+  --radius: 14px;
+  --slant: 8.34deg;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --display: 'Bricolage Grotesque', 'Arial Narrow', Arial, sans-serif;
+  --text: 'Instrument Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono: 'Martian Mono', ui-monospace, Menlo, Consolas, monospace;
+  --grain: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  font-family: var(--text);
   color: var(--ink);
-  background: var(--bg);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #16151a;
-    --panel: #1f1e25;
-    --ink: #ece9f3;
-    --muted: #a19eab;
-    --line: #34323c;
-    --accent: #a78bfa;
-    --accent-ink: #16151a;
-    --accent-soft: #2c2640;
-    --stage: #0f0e12;
-  }
+  background: var(--paper);
 }
 
 * { box-sizing: border-box; }
-html, body { margin: 0; height: 100%; background: var(--bg); }
-body { display: flex; flex-direction: column; }
+html, body { margin: 0; height: 100%; background: var(--paper); }
+body { display: flex; flex-direction: column; -webkit-font-smoothing: antialiased; }
+body::after { content: ''; position: fixed; inset: 0; background: var(--grain); opacity: 0.05; pointer-events: none; z-index: 100; }
 [hidden] { display: none !important; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+::selection { background: var(--lime); color: var(--ink); }
 
+/* ---------- Buttons ---------- */
 button, .ghost, select, input, textarea { font: inherit; color: inherit; }
 button, .ghost {
-  border: 1px solid var(--line); background: var(--panel); border-radius: 8px;
-  padding: 6px 12px; cursor: pointer; text-decoration: none; line-height: 1.3;
+  border: 1px solid var(--line-strong); background: var(--panel); border-radius: 999px;
+  padding: 7px 14px; cursor: pointer; text-decoration: none; line-height: 1.2; font-size: 14px;
+  transition: border-color 0.2s var(--ease), background 0.2s var(--ease), transform 0.2s var(--ease);
 }
-button:hover:not(:disabled), .ghost:hover { border-color: var(--accent); }
-button:disabled { opacity: 0.45; cursor: not-allowed; }
-button:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+button:hover:not(:disabled), .ghost:hover { border-color: var(--ink); }
+button:active:not(:disabled) { transform: translateY(1px); }
+button:disabled { opacity: 0.4; cursor: not-allowed; }
+button:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+button.primary { background: var(--ink); color: var(--paper); border-color: var(--ink); font-weight: 600; }
+button.primary:hover:not(:disabled) { background: #000; color: var(--lime); }
 button.danger { color: var(--danger); }
-button.active, [aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); }
-.link-button { border: 0; background: none; color: var(--accent); padding: 4px 0; }
+button.active, [aria-pressed="true"] { background: var(--ink); color: var(--lime); border-color: var(--ink); }
+.link-button { border: 0; background: none; color: var(--ink); padding: 4px 0; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--line-strong); }
+.link-button:hover { text-decoration-color: var(--ink); }
 .ghost { border-color: transparent; background: transparent; }
 
+/* ---------- Top bar ---------- */
 .topbar {
-  height: var(--topbar-h); display: flex; align-items: center; gap: 16px; padding: 0 16px;
-  background: var(--panel); border-bottom: 1px solid var(--line); flex-shrink: 0;
+  margin: 10px 10px 0; min-height: 60px; display: flex; align-items: center; gap: 14px; padding: 8px 10px 8px 16px;
+  background: var(--ink); color: var(--paper); border-radius: 16px; flex-shrink: 0;
 }
-.brand { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 18px; color: var(--ink); text-decoration: none; }
-.brand-mark { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 8px; background: var(--accent); color: var(--accent-ink); }
-.toolbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; overflow-x: auto; flex: 1; }
+.brand { display: flex; align-items: center; gap: 10px; font-family: var(--display); font-weight: 800; font-size: 22px; letter-spacing: -0.04em; color: var(--paper); text-decoration: none; }
+.brand-mark { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; background: var(--lime); color: var(--ink); font-size: 18px; transform: skewX(calc(var(--slant) * -1)); }
+.toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; flex: 1; }
+.toolbar button, .toolbar .ghost { background: transparent; color: var(--paper); border-color: rgba(242, 242, 236, 0.18); font-size: 13px; }
+.toolbar button:hover:not(:disabled), .toolbar .ghost:hover { border-color: var(--paper); }
+.toolbar [aria-pressed="true"] { background: var(--paper); color: var(--ink); border-color: var(--paper); }
+.toolbar button.primary { background: var(--lime); color: var(--ink); border-color: var(--lime); }
+.toolbar button.primary:hover:not(:disabled) { background: var(--paper); color: var(--ink); }
 .group { display: flex; gap: 4px; }
 .segmented button { border-radius: 0; margin-left: -1px; }
-.segmented button:first-child { border-radius: 8px 0 0 8px; }
-.segmented button:last-child { border-radius: 0 8px 8px 0; }
-.github { margin-left: auto; }
+.segmented button:first-child { border-radius: 999px 0 0 999px; }
+.segmented button:last-child { border-radius: 0 999px 999px 0; }
+.github { margin-left: auto; font-family: var(--mono); font-size: 11px !important; text-transform: uppercase; letter-spacing: 0.1em; }
 
 .hint {
-  display: flex; gap: 12px; align-items: center; justify-content: space-between;
-  padding: 8px 16px; background: var(--accent-soft); border-bottom: 1px solid var(--line); font-size: 14px;
+  margin: 8px 10px 0; display: flex; gap: 12px; align-items: center; justify-content: space-between;
+  padding: 8px 10px 8px 14px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; font-size: 13px; color: var(--ink-2);
 }
-.hint button { border: 0; background: none; font-size: 18px; }
+.hint::before { content: 'TIP'; font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; background: var(--lime); color: var(--ink); padding: 3px 7px; border-radius: 999px; flex-shrink: 0; }
+.hint span { flex: 1; }
+.hint button { border: 0; background: none; font-size: 18px; padding: 2px 8px; }
 
-.workspace { flex: 1; display: grid; grid-template-columns: 260px 1fr 300px; min-height: 0; }
-body:not(.has-project) .workspace { grid-template-columns: 1fr; }
+/* ---------- Workspace ---------- */
+.workspace { flex: 1; display: grid; grid-template-columns: 272px 1fr 304px; gap: 10px; padding: 10px; min-height: 0; }
+body:not(.has-project) .workspace { grid-template-columns: 1fr; padding: 0; }
 body:not(.has-project) .project-only { display: none !important; }
+body:not(.has-project) .hint { display: none; }
 
-.sidebar { background: var(--panel); overflow-y: auto; padding: 16px; min-height: 0; }
-.sidebar.left { border-right: 1px solid var(--line); }
-.sidebar.right { border-left: 1px solid var(--line); }
-.sidebar h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 18px 0 8px; }
-.sidebar h3 { font-size: 13px; margin: 14px 0 8px; }
+.sidebar { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; overflow-y: auto; padding: 16px; min-height: 0; }
+.sidebar h2 { font-family: var(--mono); font-weight: 500; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--ink-3); margin: 22px 0 10px; }
+.sidebar h2::before { content: '/ '; color: var(--ink-3); }
+.sidebar h3 { font-family: var(--display); font-size: 15px; letter-spacing: -0.02em; margin: 14px 0 8px; }
 .sidebar section:first-child h2 { margin-top: 0; }
 
 .pages-list, .section-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; }
 .pages-list li, .section-list li { min-width: 0; }
 .pages-list li { display: flex; gap: 4px; }
-.page-link { flex: 1; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.pages-list li.active .page-link { background: var(--accent-soft); border-color: var(--accent); font-weight: 600; }
-.icon { padding: 4px 9px; }
-.section-list button { width: 100%; text-align: left; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.page-link { flex: 1; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-radius: 10px; font-family: var(--mono); font-size: 12px; }
+.pages-list li.active .page-link { background: var(--ink); color: var(--lime); border-color: var(--ink); }
+.icon { padding: 4px 10px; border-radius: 10px; }
+.section-list button { width: 100%; text-align: left; font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-radius: 10px; border-color: var(--line); }
 .section-list button.is-hidden { color: var(--warn); border-style: dashed; }
 
 .swatches { display: flex; flex-wrap: wrap; gap: 8px; }
-.swatch { position: relative; width: 32px; height: 32px; cursor: pointer; }
-.swatch-chip { display: block; width: 100%; height: 100%; border-radius: 8px; border: 1px solid var(--line); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.35); }
+.swatch { position: relative; width: 34px; height: 34px; cursor: pointer; transition: transform 0.2s var(--ease); }
+.swatch:hover { transform: translateY(-2px) rotate(-4deg); }
+.swatch-chip { display: block; width: 100%; height: 100%; border-radius: 10px; border: 1px solid var(--line-strong); }
 .swatch-input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
 .font-row select { width: 100%; margin-bottom: 6px; }
-.brand-host { padding: 10px; margin-bottom: 10px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--accent-soft); display: grid; gap: 8px; }
-.brand-host h3 { margin: 0; }
+select { border: 1px solid var(--line-strong); border-radius: 10px; padding: 7px 8px; background: var(--panel); }
+
+.brand-host { padding: 12px; margin-bottom: 12px; border-radius: 14px; background: var(--ink); color: var(--paper); display: grid; gap: 10px; }
+.brand-host:empty { display: none; }
+.brand-host h3 { margin: 0; color: var(--paper); }
+.brand-host .muted { color: rgba(242, 242, 236, 0.62); }
+.brand-host button { background: transparent; color: var(--paper); border-color: rgba(242, 242, 236, 0.22); }
+.brand-host button:hover:not(:disabled) { border-color: var(--paper); }
+.brand-host button.primary { background: var(--lime); color: var(--ink); border-color: var(--lime); }
+.brand-host .link-button { color: var(--paper); text-decoration-color: rgba(242, 242, 236, 0.35); }
 .brand-card { display: grid; gap: 6px; }
 .brand-chips { display: flex; gap: 6px; }
-.small-chip { width: 24px; height: 24px; border-radius: 6px; }
+.small-chip { width: 24px; height: 24px; border-radius: 7px; }
 .brand-dialog .field-row { grid-template-columns: repeat(2, 1fr); }
 
-.stage { position: relative; overflow: auto; background: var(--stage); display: flex; justify-content: center; padding: 20px; min-height: 0; --canvas-width: 100%; }
-.canvas-frame { width: var(--canvas-width); max-width: 100%; height: 100%; min-height: 480px; border: 0; background: #ffffff; border-radius: 6px; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12); transition: width 0.2s ease; }
-.stage.busy::after { content: 'Loading page…'; position: absolute; top: 28px; left: 50%; transform: translateX(-50%); background: var(--panel); padding: 6px 14px; border-radius: 999px; font-size: 13px; }
+.preset-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.preset-chip { display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px 6px 8px; font-size: 13px; font-weight: 600; }
+.preset-dots { display: inline-flex; }
+.preset-dots i { width: 12px; height: 12px; border-radius: 50%; margin-right: -3px; border: 1.5px solid var(--panel); }
+.brand-host .preset-dots i { border-color: var(--ink); }
+.preset-chip.active { background: var(--lime); color: var(--ink); border-color: var(--lime); }
 
-.welcome { max-width: 760px; margin: 5vh auto; text-align: center; padding: 0 8px; }
-.welcome h1 { font-size: clamp(30px, 5vw, 48px); line-height: 1.1; margin: 0 0 16px; letter-spacing: -0.02em; }
-.lead { font-size: 18px; color: var(--muted); margin: 0 auto 28px; max-width: 620px; }
-.dropzone { border: 2px dashed var(--accent); border-radius: 16px; padding: 32px 20px; background: var(--panel); }
-.dropzone-title { font-weight: 600; margin: 0 0 16px; }
-.steps { text-align: left; max-width: 520px; margin: 28px auto 0; color: var(--muted); line-height: 1.8; }
-.privacy { margin-top: 20px; font-size: 14px; color: var(--muted); }
+/* ---------- Stage (the page being edited) ---------- */
+.stage {
+  position: relative; overflow: auto; display: flex; justify-content: center; padding: 22px; min-height: 0; --canvas-width: 100%;
+  background-color: var(--ink); border-radius: 16px;
+  background-image: radial-gradient(rgba(242, 242, 236, 0.09) 1px, transparent 1px); background-size: 22px 22px;
+}
+body:not(.has-project) .stage { background: var(--paper); border-radius: 0; padding: 0; display: block; }
+.canvas-frame { width: var(--canvas-width); max-width: 100%; height: 100%; min-height: 480px; border: 0; background: #ffffff; border-radius: 10px; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45); transition: width 0.35s var(--ease); }
+.stage.busy::after { content: 'Loading page…'; position: absolute; top: 30px; left: 50%; transform: translateX(-50%); background: var(--lime); color: var(--ink); font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; padding: 7px 14px; border-radius: 999px; }
 
+/* ---------- Start screen ---------- */
+.welcome { max-width: 1320px; margin: 0 auto; padding: 10px 10px 48px; }
+.kicker { font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.14em; margin: 0; color: var(--ink-3); }
+.hero {
+  position: relative; overflow: hidden; background: var(--ink); color: var(--paper); border-radius: 22px;
+  padding: clamp(28px, 5vw, 64px) clamp(22px, 5vw, 64px) clamp(28px, 4vw, 48px);
+}
+.hero .kicker { color: rgba(242, 242, 236, 0.7); }
+.hero-title {
+  position: relative; z-index: 1; font-family: var(--display); font-weight: 800; font-size: clamp(46px, 8.6vw, 128px);
+  line-height: 0.9; letter-spacing: -0.055em; margin: clamp(40px, 8vw, 120px) 0 clamp(22px, 3vw, 36px); max-width: 12ch;
+}
+.hero-title span { display: block; color: rgba(242, 242, 236, 0.42); }
+.hero-row { position: relative; z-index: 1; display: flex; flex-wrap: wrap; gap: 24px 40px; align-items: flex-end; justify-content: space-between; }
+.lead { font-size: clamp(16px, 1.4vw, 19px); line-height: 1.5; color: rgba(242, 242, 236, 0.78); max-width: 560px; margin: 0; }
+.hero-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.hero .cta { background: var(--lime); color: var(--ink); border-color: var(--lime); font-weight: 700; padding: 14px 24px; font-size: 16px; }
+.hero .cta:hover { background: var(--paper); border-color: var(--paper); }
+.hero .pill { background: transparent; color: var(--paper); border-color: rgba(242, 242, 236, 0.3); padding: 14px 22px; font-size: 16px; }
+.hero .pill:hover { border-color: var(--paper); }
+.hero-slash {
+  position: absolute; top: -20%; right: 14%; width: clamp(60px, 9vw, 140px); height: 140%; transform: rotate(var(--slant));
+  background: linear-gradient(90deg, rgba(212, 255, 63, 0.16), rgba(212, 255, 63, 0.9) 45%, rgba(212, 255, 63, 0.16));
+  filter: blur(0.2px); mix-blend-mode: screen;
+}
+.hero-slash::after { content: ''; position: absolute; inset: 0; background: var(--grain); opacity: 0.45; }
+
+.showcase { margin-top: 10px; }
+.showcase-frame { position: relative; background: var(--ink); border-radius: 22px; padding: 10px; }
+.showcase-viewport {
+  --split: 50%; --scale: 1; position: relative; overflow: hidden; border-radius: 14px; background: #fff;
+  cursor: ew-resize; touch-action: pan-y; user-select: none;
+}
+.showcase-layer { position: absolute; inset: 0; }
+.showcase-layer iframe { width: 1280px; height: 760px; border: 0; transform: scale(var(--scale)); transform-origin: 0 0; pointer-events: none; background: #fff; }
+.showcase-layer.after { clip-path: polygon(calc(var(--split) + 4%) 0, 100% 0, 100% 100%, calc(var(--split) - 4%) 100%); }
+.showcase-handle {
+  position: absolute; top: -10%; bottom: -10%; left: var(--split); width: 4px; margin-left: -2px; background: var(--lime);
+  transform: rotate(var(--slant)); box-shadow: 0 0 0 1px rgba(14, 15, 19, 0.4), 0 0 30px rgba(212, 255, 63, 0.6); pointer-events: none;
+}
+.showcase-knob {
+  position: absolute; top: 50%; left: 50%; width: 46px; height: 46px; margin: -23px 0 0 -23px; border-radius: 50%;
+  background: var(--lime); box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35); transform: rotate(calc(var(--slant) * -1));
+}
+.showcase-knob::before { content: '⟷'; position: absolute; inset: 0; display: grid; place-items: center; font-size: 20px; color: var(--ink); font-weight: 700; }
+.showcase-tag {
+  position: absolute; bottom: 14px; font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em;
+  padding: 7px 12px; border-radius: 999px; pointer-events: none;
+}
+.before-tag { left: 14px; background: var(--ink); color: var(--paper); }
+.after-tag { right: 14px; background: var(--lime); color: var(--ink); }
+.showcase-range { position: absolute; left: 10px; right: 10px; bottom: 10px; opacity: 0; height: 1px; pointer-events: none; }
+.showcase-range:focus-visible { opacity: 1; height: auto; pointer-events: auto; }
+.showcase-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 14px 4px 0; }
+
+.dropzone { margin-top: 10px; border: 1.5px dashed var(--line-strong); border-radius: 22px; padding: 28px 20px; background: var(--panel); text-align: center; }
+.dropzone-title { font-family: var(--display); font-weight: 700; font-size: 20px; letter-spacing: -0.02em; margin: 0 0 14px; }
+.steps { list-style: none; padding: 0; margin: 10px 0 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.steps li { background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 20px; color: var(--ink-2); line-height: 1.5; }
+.steps b { color: var(--ink); }
+.step-num { display: block; font-family: var(--mono); font-size: 11px; color: var(--ink-3); margin-bottom: 18px; }
+.privacy { margin: 18px 0 0; text-align: center; font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink-3); }
+
+/* ---------- Inspector ---------- */
 .button-row { display: flex; flex-wrap: wrap; gap: 6px; }
 .button-row.center { justify-content: center; }
 .button-row.end { justify-content: flex-end; }
-
-.inspector-head { display: grid; gap: 10px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
-.inspector-head .button-row button { padding: 4px 8px; font-size: 13px; }
-.panel-section { padding: 4px 0 12px; border-bottom: 1px solid var(--line); }
-.field { display: grid; gap: 4px; margin-bottom: 10px; font-size: 13px; }
-.field-label { color: var(--muted); }
-.field-hint { font-size: 12px; color: var(--muted); }
+.inspector-head { display: grid; gap: 10px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+.inspector-head strong { font-family: var(--display); font-size: 22px; letter-spacing: -0.03em; }
+.inspector-head .button-row button { padding: 5px 10px; font-size: 12.5px; }
+.panel-section { padding: 4px 0 14px; border-bottom: 1px solid var(--line); }
+.panel-section h3 { font-family: var(--mono); font-weight: 500; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--ink-3); }
+.field { display: grid; gap: 5px; margin-bottom: 10px; font-size: 13px; }
+.field-label { color: var(--ink-3); font-size: 12px; }
+.field-hint { font-size: 12px; color: var(--ink-3); }
 .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.field input[type="text"], .field input[type="url"], .field input[type="number"], .field select { width: 100%; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
-.field input[type="color"] { width: 100%; height: 34px; border: 1px solid var(--line); border-radius: 8px; padding: 2px; background: var(--panel); }
+.field input[type="text"], .field input[type="url"], .field input[type="number"], .field select {
+  width: 100%; padding: 8px 10px; border: 1px solid var(--line-strong); border-radius: 10px; background: #fff;
+}
+.field input[type="color"] { width: 100%; height: 36px; border: 1px solid var(--line-strong); border-radius: 10px; padding: 3px; background: #fff; cursor: pointer; }
+.field input[type="range"] { accent-color: var(--ink); }
 .inline { display: flex; gap: 6px; align-items: center; }
 .check { display: flex; gap: 8px; align-items: center; font-size: 13px; margin: 6px 0; }
+.check input { accent-color: var(--ink); }
 .reveal { font-weight: 600; }
-.empty-note { color: var(--ink); font-size: 14px; }
-.muted { color: var(--muted); }
+.empty-note { font-size: 14px; line-height: 1.5; }
+.empty-note p:first-child { font-family: var(--display); font-size: 20px; letter-spacing: -0.02em; line-height: 1.15; }
+.muted { color: var(--ink-3); }
 .small { font-size: 12px; }
 
-.drop-overlay { position: fixed; inset: 0; background: rgba(109, 40, 217, 0.18); border: 4px dashed var(--accent); display: grid; place-items: center; z-index: 50; pointer-events: none; }
-.drop-overlay p { background: var(--panel); padding: 14px 26px; border-radius: 999px; font-weight: 700; font-size: 20px; }
+/* ---------- Overlays ---------- */
+.drop-overlay { position: fixed; inset: 0; background: rgba(14, 15, 19, 0.55); display: grid; place-items: center; z-index: 50; pointer-events: none; backdrop-filter: blur(4px); }
+.drop-overlay p { background: var(--lime); color: var(--ink); padding: 18px 34px; border-radius: 999px; font-family: var(--display); font-weight: 800; font-size: 28px; letter-spacing: -0.03em; transform: rotate(calc(var(--slant) * -0.4)); }
 
-.toasts { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); display: grid; gap: 8px; z-index: 60; width: min(560px, calc(100% - 32px)); }
-.toast { background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 10px; font-size: 14px; box-shadow: 0 6px 24px rgba(0, 0, 0, 0.2); }
-.toast-warn { background: var(--warn); color: #ffffff; }
-.toast-error { background: var(--danger); color: #ffffff; }
-.toast-success { background: var(--ok); color: #ffffff; }
+.toasts { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: grid; gap: 8px; z-index: 60; width: min(560px, calc(100% - 32px)); }
+.toast { background: var(--ink); color: var(--paper); padding: 12px 18px; border-radius: 14px; font-size: 14px; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3); border-left: 4px solid var(--lime); }
+.toast-warn { border-left-color: #fb923c; }
+.toast-error { border-left-color: #f87171; }
+.toast-success { border-left-color: var(--lime); }
 
-dialog { border: 1px solid var(--line); border-radius: 14px; padding: 22px; width: min(720px, calc(100% - 32px)); background: var(--panel); color: var(--ink); }
-dialog::backdrop { background: rgba(0, 0, 0, 0.4); }
-dialog h2 { margin-top: 0; }
-dialog textarea { width: 100%; font-family: ui-monospace, Menlo, monospace; font-size: 13px; border: 1px solid var(--line); border-radius: 8px; padding: 10px; background: var(--bg); margin-bottom: 12px; }
+dialog { border: 0; border-radius: 20px; padding: 26px; width: min(720px, calc(100% - 32px)); background: var(--panel); color: var(--ink); box-shadow: 0 30px 90px rgba(0, 0, 0, 0.4); }
+dialog::backdrop { background: rgba(14, 15, 19, 0.6); backdrop-filter: blur(4px); }
+dialog h2 { margin-top: 0; font-family: var(--display); font-size: 30px; letter-spacing: -0.03em; }
+dialog textarea { width: 100%; font-family: var(--mono); font-size: 12.5px; border: 1px solid var(--line-strong); border-radius: 12px; padding: 12px; background: #fff; margin-bottom: 14px; }
 .noscript { padding: 24px; text-align: center; }
+
+@media (max-width: 1440px) {
+  .toolbar { gap: 6px; }
+  .toolbar button, .toolbar .ghost { padding: 6px 10px; font-size: 12px; }
+  .brand { font-size: 20px; }
+}
 
 @media (max-width: 1000px) {
   .workspace { grid-template-columns: 1fr; grid-auto-rows: min-content; overflow-y: auto; }
   .stage { order: -1; height: 70vh; }
-  .sidebar.left, .sidebar.right { border: 0; border-top: 1px solid var(--line); }
-  .topbar { height: auto; padding: 8px 16px; flex-wrap: wrap; }
+  .topbar { flex-wrap: wrap; }
+  .steps { grid-template-columns: 1fr; }
+  .hero-slash { right: -6%; opacity: 0.6; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
 }
 </style>
 </head>
@@ -241,25 +350,39 @@ dialog textarea { width: 100%; font-family: ui-monospace, Menlo, monospace; font
 
     <div id="stage" class="stage">
       <div id="welcome" class="welcome">
-        <h1>Your AI made a website.<br>Now make it yours.</h1>
-        <p class="lead">Drop in any HTML page made with Claude, ChatGPT, Gemini, Lovable, v0, Bolt or any other AI tool.
-          Click to change text, fonts, colours and images, then download clean HTML.</p>
+        <section class="hero">
+          <p class="kicker">/ Open source · Free · Runs in your browser</p>
+          <h1 class="hero-title">Your AI made a website. <span>Make it yours.</span></h1>
+          <div class="hero-row">
+            <p class="lead">Drop in the HTML from Claude, ChatGPT, Gemini, v0, Lovable or Bolt. Click anything to change it,
+              or give the whole page a new look in one click. Then download clean HTML.</p>
+            <div class="hero-actions">
+              <button type="button" class="cta" data-action="open-files">Open your HTML</button>
+              <button type="button" class="pill" data-action="paste">Paste code</button>
+              <button type="button" class="pill" data-action="sample">Try the demo</button>
+            </div>
+          </div>
+          <div class="hero-slash" aria-hidden="true"></div>
+        </section>
+
+        <section id="showcase" class="showcase" aria-label="Before and after one click"></section>
+
         <div class="dropzone">
-          <p class="dropzone-title">Drop HTML files or a whole website folder here</p>
+          <p class="dropzone-title">Drop HTML files or a whole website folder anywhere on this page</p>
           <div class="button-row center">
-            <button type="button" class="primary" data-action="open-files">Open files</button>
+            <button type="button" data-action="open-files">Open files</button>
             <button type="button" data-action="open-folder">Open folder</button>
             <button type="button" data-action="paste">Paste HTML</button>
-            <button type="button" data-action="sample">Try an example</button>
           </div>
           <button type="button" id="restore" class="link-button" hidden>Restore last session</button>
         </div>
+
         <ol class="steps">
-          <li><b>Drop</b> your AI-made page (or paste its code).</li>
-          <li><b>Click</b> anything to edit it. Swap colours and fonts site-wide on the left.</li>
-          <li><b>Download</b> clean HTML, ready to host anywhere.</li>
+          <li><span class="step-num">01</span><b>Drop</b> your AI-made page, or paste its code.</li>
+          <li><span class="step-num">02</span><b>Click</b> anything to edit it, or try a look in one click.</li>
+          <li><span class="step-num">03</span><b>Download</b> clean HTML, ready to host anywhere.</li>
         </ol>
-        <p class="privacy">🔒 Runs 100% in your browser. Your files never leave your computer.</p>
+        <p class="privacy">Runs 100% in your browser. Your files never leave your computer.</p>
       </div>
     </div>
 
@@ -829,6 +952,7 @@ const FONT_LIBRARY = Object.freeze([
   { family: 'Space Grotesk', category: 'Sans', weights: W },
   { family: 'Nunito', category: 'Sans', weights: WIDE },
   { family: 'Rubik', category: 'Sans', weights: WIDE },
+  { family: 'Instrument Sans', category: 'Sans', weights: W },
   { family: 'Playfair Display', category: 'Serif', weights: W },
   { family: 'Fraunces', category: 'Serif', weights: WIDE },
   { family: 'Lora', category: 'Serif', weights: W },
@@ -846,6 +970,7 @@ const FONT_LIBRARY = Object.freeze([
   { family: 'JetBrains Mono', category: 'Mono', weights: W },
   { family: 'Space Mono', category: 'Mono', weights: [400, 700] },
   { family: 'IBM Plex Mono', category: 'Mono', weights: W },
+  { family: 'Martian Mono', category: 'Mono', weights: W },
   { family: 'Caveat', category: 'Handwriting', weights: W },
   { family: 'Hind', category: 'Indian scripts', weights: [300, 400, 500, 600, 700] },
   { family: 'Mukta', category: 'Indian scripts', weights: WIDE },
@@ -1027,9 +1152,129 @@ function boxSection(el, cs, setStyle) {
   ]);
 }
 
+// ---- src/brand.js
+// My Brand Kit: a person's own colours and fonts, applied to any page by colour *role*
+// (background, text, accent, second accent) rather than by exact value.
+
+
+const DEFAULT_BRAND = Object.freeze({
+  name: 'My brand',
+  background: '#ffffff',
+  text: '#111827',
+  accent: '#2563eb',
+  accent2: '#f59e0b',
+  headingFont: 'Fraunces',
+  bodyFont: 'Inter',
+});
+
+const COLOR_ROLES = Object.freeze(['background', 'text', 'accent', 'accent2']);
+
+const LIGHT_MIN = 0.8;
+const DARK_MAX = 0.2;
+const MUTED_MAX_SATURATION = 0.35;
+const NEAR_BLACK = 0.03;
+const TINT_MIN_SATURATION = 0.15;
+const MAX_NAME = 40;
+const FONT_NAME = /^[A-Za-z][A-Za-z0-9 _-]{0,59}$/;
+
+function channels(hex) {
+  return [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
+}
+
+function luminance(hex) {
+  const [r, g, b] = channels(hex).map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+function saturation(hex) {
+  const values = channels(hex);
+  const max = Math.max(...values);
+  const min = Math.min(...values);
+  const lightness = (max + min) / 2;
+  if (max === min) return 0;
+  return (max - min) / (1 - Math.abs(2 * lightness - 1));
+}
+
+const isOpaque = (color) => /^#[0-9a-f]{6}$/.test(color);
+
+/** WCAG contrast ratio between two opaque hex colours (1 to 21). */
+function contrastRatio(a, b) {
+  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  return (hi + 0.05) / (lo + 0.05);
+}
+
+/** Ready-made looks for a first try. Every one is checked for readable contrast in the tests. */
+const BRAND_PRESETS = Object.freeze([
+  Object.freeze({ name: 'Studio', background: '#f3f4f0', text: '#111318', accent: '#ff4b2b', accent2: '#c2410c', headingFont: 'Bricolage Grotesque', bodyFont: 'Instrument Sans' }),
+  Object.freeze({ name: 'Electric', background: '#f5f7ff', text: '#0b0d1a', accent: '#3f5bff', accent2: '#0e8a7e', headingFont: 'Space Grotesk', bodyFont: 'Inter' }),
+  Object.freeze({ name: 'Editorial', background: '#fbf8f1', text: '#1a1714', accent: '#1f4d3a', accent2: '#2f6b4f', headingFont: 'Instrument Serif', bodyFont: 'DM Sans' }),
+  Object.freeze({ name: 'Sunset', background: '#fff8f2', text: '#1c1210', accent: '#d9480f', accent2: '#a61e4d', headingFont: 'Syne', bodyFont: 'Manrope' }),
+]);
+
+/** Picks which page colour plays each role. Input: [{ color, count }] sorted by use. */
+function classifyPalette(colors) {
+  const opaque = colors.filter((c) => isOpaque(c.color))
+    .map((c) => ({ ...c, lum: luminance(c.color), sat: saturation(c.color) }));
+  const byUse = (list) => [...list].sort((a, b) => b.count - a.count);
+  const background = byUse(opaque.filter((c) => c.lum >= LIGHT_MIN))[0]?.color ?? null;
+  const text = byUse(opaque.filter((c) => c.lum < DARK_MAX && (c.sat < MUTED_MAX_SATURATION || c.lum < NEAR_BLACK)))[0]?.color ?? null;
+  const accents = byUse(opaque.filter((c) =>
+    c.lum < LIGHT_MIN && c.lum >= NEAR_BLACK && c.sat >= MUTED_MAX_SATURATION && c.color !== text));
+  return { background, text, accent: accents[0]?.color ?? null, accent2: accents[1]?.color ?? null };
+}
+
+const sameName = (a, b) => a.trim().toLowerCase() === b.trim().toLowerCase();
+
+/** The swaps that would put `brand` on a page: { colors: [[from, to]], fonts: [[from, to]] }. */
+function planBrandSwaps(pageColors, pageFonts, brand) {
+  const roles = classifyPalette(pageColors);
+  const roleSwaps = COLOR_ROLES
+    .filter((role) => roles[role] && brand[role] && roles[role] !== brand[role])
+    .map((role) => [roles[role], brand[role]]);
+  // Leftover light tints of the old theme (the lavender cast of a purple page) follow the background.
+  const tintSwaps = pageColors
+    .filter((c) => isOpaque(c.color) && c.color !== '#ffffff' && c.color !== roles.background && c.color !== brand.background)
+    .filter((c) => luminance(c.color) >= LIGHT_MIN && saturation(c.color) >= TINT_MIN_SATURATION)
+    .map((c) => [c.color, brand.background]);
+  const colors = [...roleSwaps, ...tintSwaps];
+  const targets = [brand.bodyFont, brand.headingFont];
+  const fonts = pageFonts.slice(0, 2)
+    .map((f, i) => [f.family, targets[i]])
+    .filter(([from, to]) => to && !sameName(from, to));
+  return { colors, fonts };
+}
+
+/** Accepts anything (e.g. an imported file) and returns a well-formed brand. */
+function sanitizeBrand(input) {
+  const source = input && typeof input === 'object' ? input : {};
+  const brand = { ...DEFAULT_BRAND };
+  if (typeof source.name === 'string' && source.name.trim()) brand.name = source.name.trim().slice(0, MAX_NAME);
+  for (const role of COLOR_ROLES) {
+    const color = normalizeColor(typeof source[role] === 'string' ? source[role] : '');
+    if (color) brand[role] = color.slice(0, 7);
+  }
+  for (const key of ['headingFont', 'bodyFont']) {
+    if (typeof source[key] === 'string' && FONT_NAME.test(source[key].trim())) brand[key] = source[key].trim();
+  }
+  return Object.freeze(brand);
+}
+
+/** A brand built from a page's current look, filling gaps from the defaults. */
+function brandFromPage(pageColors, pageFonts) {
+  const roles = classifyPalette(pageColors);
+  const picked = Object.fromEntries(COLOR_ROLES.filter((r) => roles[r]).map((r) => [r, roles[r]]));
+  return sanitizeBrand({
+    name: 'My brand',
+    ...picked,
+    bodyFont: pageFonts[0]?.family,
+    headingFont: pageFonts[1]?.family || pageFonts[0]?.family,
+  });
+}
+
 // ---- src/dom-theme.js
 // Applies theme swaps to a live page: every <style> block, every style="" attribute,
 // and SVG colour attributes. Editor-owned styles are never touched.
+
 
 
 
@@ -1106,6 +1351,38 @@ function applySwapPlan(doc, plan, usedColors) {
   plan.fonts.forEach(([from], i) => { changed += rewriteAll(doc, (text) => replaceFont(text, from, `unslop-tmp-${i}`)); });
   plan.fonts.forEach(([, to], i) => { swapFont(doc, `unslop-tmp-${i}`, to); });
   return changed;
+}
+
+/** Adds brand font rules for what a page does not name itself: body text, headings, or both. */
+function addFontRules(doc, brand, { body, headings }) {
+  const rules = [];
+  if (body) { ensureFontLink(doc, brand.bodyFont); rules.push(`body{font-family:${fontStack(brand.bodyFont)}}`); }
+  if (headings) { ensureFontLink(doc, brand.headingFont); rules.push(`h1,h2,h3,h4,h5,h6{font-family:${fontStack(brand.headingFont)}}`); }
+  if (!rules.length) return 0;
+  const style = doc.createElement('style');
+  style.textContent = rules.join('');
+  (doc.head || doc.documentElement).appendChild(style);
+  return rules.length;
+}
+
+/**
+ * Puts a brand (or preset look) on a page: colours by role, fonts by use.
+ * Works on the live edit document and on a DOMParser document alike.
+ * Returns { changed, rolesFound, colors, fonts } where colors/fonts count what changed.
+ */
+function applyBrandToDocument(doc, brand) {
+  const css = readThemeCss(doc);
+  const colors = extractColors(css);
+  const fonts = extractFonts(css);
+  const plan = planBrandSwaps(colors, fonts, brand);
+  const needsBody = fonts.length === 0;
+  const needsHeadings = fonts.length < 2 && !fonts.some((f) => f.family.toLowerCase() === brand.headingFont.toLowerCase());
+  if (!plan.colors.length && !plan.fonts.length && !needsBody && !needsHeadings) {
+    return { changed: false, rolesFound: Object.values(classifyPalette(colors)).some(Boolean), colors: 0, fonts: 0 };
+  }
+  applySwapPlan(doc, plan, colors.map((c) => c.color));
+  const added = addFontRules(doc, brand, { body: needsBody, headings: needsHeadings });
+  return { changed: true, rolesFound: true, colors: plan.colors.length, fonts: plan.fonts.length + added };
 }
 
 // ---- src/sidebar.js
@@ -1377,104 +1654,6 @@ function downloadSite(pages) {
   saveBlob('website.zip', new Blob([zip], { type: 'application/zip' }));
 }
 
-// ---- src/brand.js
-// My Brand Kit: a person's own colours and fonts, applied to any page by colour *role*
-// (background, text, accent, second accent) rather than by exact value.
-
-
-const DEFAULT_BRAND = Object.freeze({
-  name: 'My brand',
-  background: '#ffffff',
-  text: '#111827',
-  accent: '#2563eb',
-  accent2: '#f59e0b',
-  headingFont: 'Fraunces',
-  bodyFont: 'Inter',
-});
-
-const COLOR_ROLES = Object.freeze(['background', 'text', 'accent', 'accent2']);
-
-const LIGHT_MIN = 0.8;
-const DARK_MAX = 0.2;
-const MUTED_MAX_SATURATION = 0.35;
-const NEAR_BLACK = 0.03;
-const MAX_NAME = 40;
-const FONT_NAME = /^[A-Za-z][A-Za-z0-9 _-]{0,59}$/;
-
-function channels(hex) {
-  return [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
-}
-
-function luminance(hex) {
-  const [r, g, b] = channels(hex).map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-}
-
-function saturation(hex) {
-  const values = channels(hex);
-  const max = Math.max(...values);
-  const min = Math.min(...values);
-  const lightness = (max + min) / 2;
-  if (max === min) return 0;
-  return (max - min) / (1 - Math.abs(2 * lightness - 1));
-}
-
-const isOpaque = (color) => /^#[0-9a-f]{6}$/.test(color);
-
-/** Picks which page colour plays each role. Input: [{ color, count }] sorted by use. */
-function classifyPalette(colors) {
-  const opaque = colors.filter((c) => isOpaque(c.color))
-    .map((c) => ({ ...c, lum: luminance(c.color), sat: saturation(c.color) }));
-  const byUse = (list) => [...list].sort((a, b) => b.count - a.count);
-  const background = byUse(opaque.filter((c) => c.lum >= LIGHT_MIN))[0]?.color ?? null;
-  const text = byUse(opaque.filter((c) => c.lum < DARK_MAX && (c.sat < MUTED_MAX_SATURATION || c.lum < NEAR_BLACK)))[0]?.color ?? null;
-  const accents = byUse(opaque.filter((c) =>
-    c.lum < LIGHT_MIN && c.lum >= NEAR_BLACK && c.sat >= MUTED_MAX_SATURATION && c.color !== text));
-  return { background, text, accent: accents[0]?.color ?? null, accent2: accents[1]?.color ?? null };
-}
-
-const sameName = (a, b) => a.trim().toLowerCase() === b.trim().toLowerCase();
-
-/** The swaps that would put `brand` on a page: { colors: [[from, to]], fonts: [[from, to]] }. */
-function planBrandSwaps(pageColors, pageFonts, brand) {
-  const roles = classifyPalette(pageColors);
-  const colors = COLOR_ROLES
-    .filter((role) => roles[role] && brand[role] && roles[role] !== brand[role])
-    .map((role) => [roles[role], brand[role]]);
-  const targets = [brand.bodyFont, brand.headingFont];
-  const fonts = pageFonts.slice(0, 2)
-    .map((f, i) => [f.family, targets[i]])
-    .filter(([from, to]) => to && !sameName(from, to));
-  return { colors, fonts };
-}
-
-/** Accepts anything (e.g. an imported file) and returns a well-formed brand. */
-function sanitizeBrand(input) {
-  const source = input && typeof input === 'object' ? input : {};
-  const brand = { ...DEFAULT_BRAND };
-  if (typeof source.name === 'string' && source.name.trim()) brand.name = source.name.trim().slice(0, MAX_NAME);
-  for (const role of COLOR_ROLES) {
-    const color = normalizeColor(typeof source[role] === 'string' ? source[role] : '');
-    if (color) brand[role] = color.slice(0, 7);
-  }
-  for (const key of ['headingFont', 'bodyFont']) {
-    if (typeof source[key] === 'string' && FONT_NAME.test(source[key].trim())) brand[key] = source[key].trim();
-  }
-  return Object.freeze(brand);
-}
-
-/** A brand built from a page's current look, filling gaps from the defaults. */
-function brandFromPage(pageColors, pageFonts) {
-  const roles = classifyPalette(pageColors);
-  const picked = Object.fromEntries(COLOR_ROLES.filter((r) => roles[r]).map((r) => [r, roles[r]]));
-  return sanitizeBrand({
-    name: 'My brand',
-    ...picked,
-    bodyFont: pageFonts[0]?.family,
-    headingFont: pageFonts[1]?.family || pageFonts[0]?.family,
-  });
-}
-
 // ---- src/persist.js
 // Autosave to this browser only. Nothing is ever sent anywhere.
 // Opened as a file (file://), Chrome gives every local HTML file the same storage, so any other
@@ -1599,9 +1778,20 @@ function importBrand(onLoaded) {
   input.click();
 }
 
+/** One-click ready-made looks, each chip showing its own colours. */
+function presetChips(onPick) {
+  return h('div', { class: 'preset-row', role: 'group', 'aria-label': 'Try a look' }, BRAND_PRESETS.map((preset) =>
+    h('button', { type: 'button', class: 'preset-chip', 'data-preset': preset.name, title: `${preset.headingFont} / ${preset.bodyFont}`, onclick: () => onPick(preset) }, [
+      h('span', { class: 'preset-dots', 'aria-hidden': 'true' }, [preset.accent, preset.accent2, preset.text].map((c) => h('i', { style: { background: c } }))),
+      preset.name,
+    ])));
+}
+
 /** Renders the card. `pageLook()` returns { colors, fonts } of the open page; `onApply(brand)` applies it. */
 function renderBrandCard(host, { pageLook, onApply }) {
   clear(host);
+  host.appendChild(h('h3', { text: 'Try a look' }));
+  host.appendChild(presetChips(onApply));
   const brand = currentBrand();
   const rerender = () => renderBrandCard(host, { pageLook, onApply });
   const save = (next) => { persist(next); rerender(); toast(`Saved "${next.name}".`, 'success'); };
@@ -1669,8 +1859,6 @@ function uniquePageName(name, pageNames) {
 
 // ---- src/app.js
 // The editor controller: pages, undo history, edit/preview modes, theme swaps and export.
-
-
 
 
 
@@ -1848,34 +2036,15 @@ function createApp(els) {
     return { colors: extractColors(css), fonts: extractFonts(css) };
   }
 
-  /** Adds brand font rules for what the page does not name itself: body text, headings, or both. */
-  function addBrandFonts(brand, { body, headings }) {
-    const rules = [];
-    if (body) { ensureFontLink(doc, brand.bodyFont); rules.push(`body{font-family:${fontStack(brand.bodyFont)}}`); }
-    if (headings) { ensureFontLink(doc, brand.headingFont); rules.push(`h1,h2,h3,h4,h5,h6{font-family:${fontStack(brand.headingFont)}}`); }
-    if (!rules.length) return 0;
-    const style = doc.createElement('style');
-    style.textContent = rules.join('');
-    (doc.head || doc.documentElement).appendChild(style);
-    return rules.length;
-  }
-
   function applyBrand(brand) {
-    const look = pageLook();
-    const plan = planBrandSwaps(look.colors, look.fonts, brand);
-    const needsHeadingRule = look.fonts.length < 2 && !look.fonts.some((f) => f.family.toLowerCase() === brand.headingFont.toLowerCase());
-    const planWork = plan.colors.length + plan.fonts.length;
-    if (!planWork && !needsHeadingRule && look.fonts.length) {
-      const rolesFound = Object.values(classifyPalette(look.colors)).some(Boolean);
-      toast(rolesFound ? 'This page already uses your brand.' : 'Could not tell which colours are background, text and accent on this page. Change them from the Colours list instead.');
+    const result = applyBrandToDocument(doc, brand);
+    if (!result.changed) {
+      toast(result.rolesFound ? 'This page already uses this look.' : 'Could not tell which colours are background, text and accent on this page. Change them from the Colours list instead.');
       return;
     }
-    applySwapPlan(doc, plan, look.colors.map((c) => c.color));
-    const addedRules = addBrandFonts(brand, { body: !look.fonts.length, headings: needsHeadingRule });
     commit();
     refreshPanels();
-    const fontsDone = plan.fonts.length + addedRules;
-    toast(`Applied "${brand.name}": ${plan.colors.length} colour${plan.colors.length === 1 ? '' : 's'} and ${fontsDone} font${fontsDone === 1 ? '' : 's'}. Undo if you don't like it.`, 'success');
+    toast(`Applied "${brand.name}": ${result.colors} colour${result.colors === 1 ? '' : 's'} and ${result.fonts} font${result.fonts === 1 ? '' : 's'}. Undo if you don't like it.`, 'success');
   }
 
   function onFont(from, to) {
@@ -2259,8 +2428,114 @@ const SAMPLE_PAGES = Object.freeze([
   Object.freeze({ name: 'about.html', html: ABOUT }),
 ]);
 
+// ---- src/showcase.js
+// The start-screen showcase: the same AI-made page before and after one click, with a draggable
+// slanted divider. Both pages render in fully locked frames (no scripts, no same-origin).
+
+
+
+
+
+
+const PAGE_WIDTH = 1280;
+const PAGE_HEIGHT = 760;
+const SWEEP_MS = 2800;
+const START_SPLIT = 50;
+
+/** The page HTML with a preset look applied, built without touching any live document. */
+function brandedHtml(html, brand) {
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  applyBrandToDocument(doc, brand);
+  return `<!DOCTYPE html>\n${doc.documentElement.outerHTML}`;
+}
+
+function lockedFrame(html, title) {
+  const frame = h('iframe', { sandbox: '', title, tabindex: '-1', loading: 'lazy', referrerpolicy: 'no-referrer' });
+  frame.srcdoc = html;
+  return frame;
+}
+
+const prefersReducedMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+
+function introSweep(setSplit, isStopped) {
+  if (prefersReducedMotion()) return;
+  const start = performance.now();
+  const step = (now) => {
+    if (isStopped()) return;
+    const t = Math.min(1, (now - start) / SWEEP_MS);
+    // 50 -> 88 -> 12 -> 50, eased: a quick look at each side.
+    const wave = Math.sin(t * Math.PI * 2);
+    setSplit(START_SPLIT + wave * 38 * (1 - t * 0.35));
+    if (t < 1) requestAnimationFrame(step); else setSplit(START_SPLIT);
+  };
+  requestAnimationFrame(step);
+}
+
+/** Builds the showcase inside `host`. */
+function mountShowcase(host) {
+  const source = SAMPLE_PAGES[0].html;
+  let userMoved = false;
+  const beforeFrame = lockedFrame(source, 'Before: a typical AI-generated page');
+  const afterFrame = lockedFrame(brandedHtml(source, BRAND_PRESETS[0]), 'After: the same page, one click later');
+  const afterLabel = h('span', { class: 'showcase-tag after-tag', text: `After · ${BRAND_PRESETS[0].name}` });
+
+  const viewport = h('div', { class: 'showcase-viewport' }, [
+    h('div', { class: 'showcase-layer' }, [beforeFrame]),
+    h('div', { class: 'showcase-layer after' }, [afterFrame]),
+    h('div', { class: 'showcase-handle', 'aria-hidden': 'true' }, [h('span', { class: 'showcase-knob' })]),
+    h('span', { class: 'showcase-tag before-tag', text: 'Before · AI slop' }),
+    afterLabel,
+  ]);
+  const range = h('input', { type: 'range', min: 0, max: 100, value: START_SPLIT, class: 'showcase-range', 'aria-label': 'Slide to compare before and after' });
+
+  const setSplit = (pct) => {
+    const clamped = Math.max(0, Math.min(100, pct));
+    viewport.style.setProperty('--split', `${clamped}%`);
+    range.value = String(Math.round(clamped));
+  };
+  const fromPointer = (e) => {
+    const box = viewport.getBoundingClientRect();
+    setSplit(((e.clientX - box.left) / box.width) * 100);
+  };
+  viewport.addEventListener('pointerdown', (e) => {
+    userMoved = true;
+    viewport.setPointerCapture(e.pointerId);
+    fromPointer(e);
+  });
+  viewport.addEventListener('pointermove', (e) => { if (viewport.hasPointerCapture(e.pointerId)) fromPointer(e); });
+  range.addEventListener('input', () => { userMoved = true; setSplit(Number(range.value)); });
+
+  new ResizeObserver(([entry]) => {
+    const scale = entry.contentRect.width / PAGE_WIDTH;
+    viewport.style.setProperty('--scale', String(scale));
+    viewport.style.height = `${Math.round(PAGE_HEIGHT * scale)}px`;
+  }).observe(viewport);
+
+  const chips = presetChips((preset) => {
+    afterFrame.srcdoc = brandedHtml(source, preset);
+    afterLabel.textContent = `After · ${preset.name}`;
+    chips.querySelectorAll('.preset-chip').forEach((c) => c.classList.toggle('active', c.dataset.preset === preset.name));
+    userMoved = true;
+    setSplit(30);
+  });
+  chips.querySelector('.preset-chip')?.classList.add('active');
+
+  host.append(
+    h('div', { class: 'showcase-frame' }, [viewport, range]),
+    h('div', { class: 'showcase-controls' }, [h('span', { class: 'kicker', text: 'Try a look →' }), chips]),
+  );
+  setSplit(START_SPLIT);
+  const observer = new IntersectionObserver(([entry]) => {
+    if (!entry.isIntersecting) return;
+    observer.disconnect();
+    introSweep(setSplit, () => userMoved);
+  }, { threshold: 0.4 });
+  observer.observe(viewport);
+}
+
 // ---- src/main.js
 // Start-up: wires the page's buttons, drag and drop, paste and shortcuts to the editor.
+
 
 
 
@@ -2374,6 +2649,7 @@ function wireHint() {
   $('hint-show').addEventListener('click', () => { hint.hidden = false; });
 }
 
+mountShowcase($('showcase'));
 wireOpening();
 wireDragAndDrop();
 wireToolbar();

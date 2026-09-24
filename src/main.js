@@ -5,6 +5,7 @@ import { filesFromDrop, filesFromInput, loadDroppedFiles } from './loader.js';
 import { loadProject } from './persist.js';
 import { SAMPLE_PAGES } from './sample-site.js';
 import { toast, storageGet, storageSet } from './ui.js';
+import { mountShowcase } from './showcase.js';
 
 const HINT_KEY = 'unslop:hint-dismissed';
 const DEVICE_WIDTHS = { desktop: null, tablet: 820, mobile: 390 };
@@ -113,6 +114,7 @@ function wireHint() {
   $('hint-show').addEventListener('click', () => { hint.hidden = false; });
 }
 
+mountShowcase($('showcase'));
 wireOpening();
 wireDragAndDrop();
 wireToolbar();

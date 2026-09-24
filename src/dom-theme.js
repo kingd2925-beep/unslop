@@ -1,8 +1,9 @@
 // Applies theme swaps to a live page: every <style> block, every style="" attribute,
 // and SVG colour attributes. Editor-owned styles are never touched.
 
-import { replaceColor, replaceFont } from './theme.js';
-import { ensureFontLink } from './fonts.js';
+import { replaceColor, replaceFont, extractColors, extractFonts } from './theme.js';
+import { ensureFontLink, fontStack } from './fonts.js';
+import { planBrandSwaps, classifyPalette } from './brand.js';
 
 const COLOR_ATTRIBUTES = ['fill', 'stroke', 'stop-color', 'color', 'bgcolor'];
 
@@ -77,4 +78,36 @@ export function applySwapPlan(doc, plan, usedColors) {
   plan.fonts.forEach(([from], i) => { changed += rewriteAll(doc, (text) => replaceFont(text, from, `unslop-tmp-${i}`)); });
   plan.fonts.forEach(([, to], i) => { swapFont(doc, `unslop-tmp-${i}`, to); });
   return changed;
+}
+
+/** Adds brand font rules for what a page does not name itself: body text, headings, or both. */
+function addFontRules(doc, brand, { body, headings }) {
+  const rules = [];
+  if (body) { ensureFontLink(doc, brand.bodyFont); rules.push(`body{font-family:${fontStack(brand.bodyFont)}}`); }
+  if (headings) { ensureFontLink(doc, brand.headingFont); rules.push(`h1,h2,h3,h4,h5,h6{font-family:${fontStack(brand.headingFont)}}`); }
+  if (!rules.length) return 0;
+  const style = doc.createElement('style');
+  style.textContent = rules.join('');
+  (doc.head || doc.documentElement).appendChild(style);
+  return rules.length;
+}
+
+/**
+ * Puts a brand (or preset look) on a page: colours by role, fonts by use.
+ * Works on the live edit document and on a DOMParser document alike.
+ * Returns { changed, rolesFound, colors, fonts } where colors/fonts count what changed.
+ */
+export function applyBrandToDocument(doc, brand) {
+  const css = readThemeCss(doc);
+  const colors = extractColors(css);
+  const fonts = extractFonts(css);
+  const plan = planBrandSwaps(colors, fonts, brand);
+  const needsBody = fonts.length === 0;
+  const needsHeadings = fonts.length < 2 && !fonts.some((f) => f.family.toLowerCase() === brand.headingFont.toLowerCase());
+  if (!plan.colors.length && !plan.fonts.length && !needsBody && !needsHeadings) {
+    return { changed: false, rolesFound: Object.values(classifyPalette(colors)).some(Boolean), colors: 0, fonts: 0 };
+  }
+  applySwapPlan(doc, plan, colors.map((c) => c.color));
+  const added = addFontRules(doc, brand, { body: needsBody, headings: needsHeadings });
+  return { changed: true, rolesFound: true, colors: plan.colors.length, fonts: plan.fonts.length + added };
 }

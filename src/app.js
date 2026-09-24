@@ -6,11 +6,9 @@ import { attachEditor } from './editor.js';
 import { renderInspector } from './inspector.js';
 import { renderPages, renderTheme, renderSections } from './sidebar.js';
 import { serializePage, downloadHtml, downloadSite } from './exporter.js';
-import { swapColor, swapFont, readThemeCss, applySwapPlan } from './dom-theme.js';
+import { swapColor, swapFont, readThemeCss, applyBrandToDocument } from './dom-theme.js';
 import { extractColors, extractFonts } from './theme.js';
-import { planBrandSwaps, classifyPalette } from './brand.js';
 import { renderBrandCard } from './brand-panel.js';
-import { ensureFontLink, fontStack } from './fonts.js';
 import { resolvePageLink, uniquePageName } from './pages.js';
 import { saveProject, isOfflineFile } from './persist.js';
 import { h, clear, toast } from './ui.js';
@@ -179,34 +177,15 @@ export function createApp(els) {
     return { colors: extractColors(css), fonts: extractFonts(css) };
   }
 
-  /** Adds brand font rules for what the page does not name itself: body text, headings, or both. */
-  function addBrandFonts(brand, { body, headings }) {
-    const rules = [];
-    if (body) { ensureFontLink(doc, brand.bodyFont); rules.push(`body{font-family:${fontStack(brand.bodyFont)}}`); }
-    if (headings) { ensureFontLink(doc, brand.headingFont); rules.push(`h1,h2,h3,h4,h5,h6{font-family:${fontStack(brand.headingFont)}}`); }
-    if (!rules.length) return 0;
-    const style = doc.createElement('style');
-    style.textContent = rules.join('');
-    (doc.head || doc.documentElement).appendChild(style);
-    return rules.length;
-  }
-
   function applyBrand(brand) {
-    const look = pageLook();
-    const plan = planBrandSwaps(look.colors, look.fonts, brand);
-    const needsHeadingRule = look.fonts.length < 2 && !look.fonts.some((f) => f.family.toLowerCase() === brand.headingFont.toLowerCase());
-    const planWork = plan.colors.length + plan.fonts.length;
-    if (!planWork && !needsHeadingRule && look.fonts.length) {
-      const rolesFound = Object.values(classifyPalette(look.colors)).some(Boolean);
-      toast(rolesFound ? 'This page already uses your brand.' : 'Could not tell which colours are background, text and accent on this page. Change them from the Colours list instead.');
+    const result = applyBrandToDocument(doc, brand);
+    if (!result.changed) {
+      toast(result.rolesFound ? 'This page already uses this look.' : 'Could not tell which colours are background, text and accent on this page. Change them from the Colours list instead.');
       return;
     }
-    applySwapPlan(doc, plan, look.colors.map((c) => c.color));
-    const addedRules = addBrandFonts(brand, { body: !look.fonts.length, headings: needsHeadingRule });
     commit();
     refreshPanels();
-    const fontsDone = plan.fonts.length + addedRules;
-    toast(`Applied "${brand.name}": ${plan.colors.length} colour${plan.colors.length === 1 ? '' : 's'} and ${fontsDone} font${fontsDone === 1 ? '' : 's'}. Undo if you don't like it.`, 'success');
+    toast(`Applied "${brand.name}": ${result.colors} colour${result.colors === 1 ? '' : 's'} and ${result.fonts} font${result.fonts === 1 ? '' : 's'}. Undo if you don't like it.`, 'success');
   }
 
   function onFont(from, to) {

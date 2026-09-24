@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>unslop social card</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Martian+Mono:wght@400;500&display=swap">
+<style>
+  * { box-sizing: border-box; margin: 0; }
+  body { width: 1280px; height: 640px; background: #f2f2ec; padding: 18px; font-family: 'Bricolage Grotesque', sans-serif; }
+  .card { position: relative; width: 100%; height: 100%; background: #0e0f13; border-radius: 28px; overflow: hidden; color: #f2f2ec; padding: 56px 60px; }
+  .kicker { font-family: 'Martian Mono', monospace; font-size: 15px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(242,242,236,.7); }
+  h1 { position: relative; z-index: 2; font-weight: 800; font-size: 84px; line-height: .9; letter-spacing: -0.055em; margin-top: 44px; max-width: 7.2em; }
+  h1 span { display: block; color: rgba(242,242,236,.42); }
+  .brand { position: absolute; left: 60px; bottom: 50px; z-index: 2; display: flex; align-items: center; gap: 14px; font-weight: 800; font-size: 34px; letter-spacing: -0.04em; }
+  .mark { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 13px; background: #d4ff3f; color: #0e0f13; font-size: 28px; transform: skewX(-8.34deg); }
+  .shot { position: absolute; right: -40px; top: 70px; width: 640px; border-radius: 18px; transform: rotate(-4deg); box-shadow: 0 40px 90px rgba(0,0,0,.6); border: 8px solid #1c1d22; }
+  .slash { position: absolute; top: -20%; right: 44%; width: 110px; height: 150%; transform: rotate(8.34deg); background: linear-gradient(90deg, rgba(212,255,63,.12), rgba(212,255,63,.85) 45%, rgba(212,255,63,.12)); z-index: 1; }
+  .tag { position: absolute; right: 60px; bottom: 50px; z-index: 3; font-family: 'Martian Mono', monospace; font-size: 15px; letter-spacing: .1em; text-transform: uppercase; background: #d4ff3f; color: #0e0f13; padding: 12px 18px; border-radius: 999px; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="slash"></div>
+    <p class="kicker">/ Open source · Free · In your browser</p>
+    <h1>Your AI made a website. <span>Make it yours.</span></h1>
+    <img class="shot" src="../docs/showcase.png" alt="">
+    <div class="brand"><span class="mark">u</span> unslop</div>
+    <div class="tag">Before → after in one click</div>
+  </div>
+</body>
+</html>

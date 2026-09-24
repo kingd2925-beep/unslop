@@ -30,6 +30,8 @@ unslop opens HTML that you did not write, so it treats every page as untrusted.
   button to keep your work.
 - When you preview a page, it loads its own images, fonts and scripts like any web page, and those servers
   may see where the request came from (the referrer). The Google Fonts link unslop adds behaves the same way.
+- unslop's own interface loads three fonts (Bricolage Grotesque, Instrument Sans, Martian Mono) from Google
+  Fonts when you are online. Offline, it falls back to your system fonts. No page content is sent with it.
 
 ## Why there is no Content-Security-Policy
 

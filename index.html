@@ -12,15 +12,18 @@
   <meta property="og:title" content="unslop · edit any AI-generated website, no code">
   <meta property="og:description" content="Drop in the HTML your AI made. Click to change text, fonts, colors and images. Apply your own brand in one click. Free, open source, private.">
   <meta property="og:url" content="https://kingd2925-beep.github.io/unslop/">
-  <meta property="og:image" content="https://kingd2925-beep.github.io/unslop/docs/editing.png">
+  <meta property="og:image" content="https://kingd2925-beep.github.io/unslop/docs/social-preview.png">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="unslop · edit any AI-generated website, no code">
   <meta name="twitter:description" content="Drop in the HTML your AI made and make it yours: text, fonts, colors, images, your brand. Free and open source.">
-  <meta name="twitter:image" content="https://kingd2925-beep.github.io/unslop/docs/editing.png">
+  <meta name="twitter:image" content="https://kingd2925-beep.github.io/unslop/docs/social-preview.png">
   <script type="application/ld+json">
   {"@context":"https://schema.org","@type":"SoftwareApplication","name":"unslop","applicationCategory":"DesignApplication","operatingSystem":"Any (web browser)","url":"https://kingd2925-beep.github.io/unslop/","description":"Free, open-source visual editor for AI-generated websites. Edit text, fonts, colors and images of HTML made by Claude, ChatGPT, Gemini, v0, Lovable or Bolt, then download clean HTML.","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"author":{"@type":"Person","name":"Aryan Gupta"},"license":"https://opensource.org/licenses/MIT"}
   </script>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%237c3aed'/%3E%3Cpath d='M18 20v14a14 14 0 0 0 28 0V20' fill='none' stroke='white' stroke-width='7' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Instrument+Sans:wght@400..700&family=Martian+Mono:wght@400;500&display=swap">
   <link rel="stylesheet" href="styles/app.css">
 </head>
 <body data-mode="edit">
@@ -82,25 +85,39 @@
 
     <div id="stage" class="stage">
       <div id="welcome" class="welcome">
-        <h1>Your AI made a website.<br>Now make it yours.</h1>
-        <p class="lead">Drop in any HTML page made with Claude, ChatGPT, Gemini, Lovable, v0, Bolt or any other AI tool.
-          Click to change text, fonts, colours and images, then download clean HTML.</p>
+        <section class="hero">
+          <p class="kicker">/ Open source · Free · Runs in your browser</p>
+          <h1 class="hero-title">Your AI made a website. <span>Make it yours.</span></h1>
+          <div class="hero-row">
+            <p class="lead">Drop in the HTML from Claude, ChatGPT, Gemini, v0, Lovable or Bolt. Click anything to change it,
+              or give the whole page a new look in one click. Then download clean HTML.</p>
+            <div class="hero-actions">
+              <button type="button" class="cta" data-action="open-files">Open your HTML</button>
+              <button type="button" class="pill" data-action="paste">Paste code</button>
+              <button type="button" class="pill" data-action="sample">Try the demo</button>
+            </div>
+          </div>
+          <div class="hero-slash" aria-hidden="true"></div>
+        </section>
+
+        <section id="showcase" class="showcase" aria-label="Before and after one click"></section>
+
         <div class="dropzone">
-          <p class="dropzone-title">Drop HTML files or a whole website folder here</p>
+          <p class="dropzone-title">Drop HTML files or a whole website folder anywhere on this page</p>
           <div class="button-row center">
-            <button type="button" class="primary" data-action="open-files">Open files</button>
+            <button type="button" data-action="open-files">Open files</button>
             <button type="button" data-action="open-folder">Open folder</button>
             <button type="button" data-action="paste">Paste HTML</button>
-            <button type="button" data-action="sample">Try an example</button>
           </div>
           <button type="button" id="restore" class="link-button" hidden>Restore last session</button>
         </div>
+
         <ol class="steps">
-          <li><b>Drop</b> your AI-made page (or paste its code).</li>
-          <li><b>Click</b> anything to edit it. Swap colours and fonts site-wide on the left.</li>
-          <li><b>Download</b> clean HTML, ready to host anywhere.</li>
+          <li><span class="step-num">01</span><b>Drop</b> your AI-made page, or paste its code.</li>
+          <li><span class="step-num">02</span><b>Click</b> anything to edit it, or try a look in one click.</li>
+          <li><span class="step-num">03</span><b>Download</b> clean HTML, ready to host anywhere.</li>
         </ol>
-        <p class="privacy">🔒 Runs 100% in your browser. Your files never leave your computer.</p>
+        <p class="privacy">Runs 100% in your browser. Your files never leave your computer.</p>
       </div>
     </div>
 

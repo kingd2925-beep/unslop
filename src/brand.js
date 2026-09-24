@@ -19,6 +19,7 @@ const LIGHT_MIN = 0.8;
 const DARK_MAX = 0.2;
 const MUTED_MAX_SATURATION = 0.35;
 const NEAR_BLACK = 0.03;
+const TINT_MIN_SATURATION = 0.15;
 const MAX_NAME = 40;
 const FONT_NAME = /^[A-Za-z][A-Za-z0-9 _-]{0,59}$/;
 
@@ -42,6 +43,20 @@ function saturation(hex) {
 
 const isOpaque = (color) => /^#[0-9a-f]{6}$/.test(color);
 
+/** WCAG contrast ratio between two opaque hex colours (1 to 21). */
+export function contrastRatio(a, b) {
+  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  return (hi + 0.05) / (lo + 0.05);
+}
+
+/** Ready-made looks for a first try. Every one is checked for readable contrast in the tests. */
+export const BRAND_PRESETS = Object.freeze([
+  Object.freeze({ name: 'Studio', background: '#f3f4f0', text: '#111318', accent: '#ff4b2b', accent2: '#c2410c', headingFont: 'Bricolage Grotesque', bodyFont: 'Instrument Sans' }),
+  Object.freeze({ name: 'Electric', background: '#f5f7ff', text: '#0b0d1a', accent: '#3f5bff', accent2: '#0e8a7e', headingFont: 'Space Grotesk', bodyFont: 'Inter' }),
+  Object.freeze({ name: 'Editorial', background: '#fbf8f1', text: '#1a1714', accent: '#1f4d3a', accent2: '#2f6b4f', headingFont: 'Instrument Serif', bodyFont: 'DM Sans' }),
+  Object.freeze({ name: 'Sunset', background: '#fff8f2', text: '#1c1210', accent: '#d9480f', accent2: '#a61e4d', headingFont: 'Syne', bodyFont: 'Manrope' }),
+]);
+
 /** Picks which page colour plays each role. Input: [{ color, count }] sorted by use. */
 export function classifyPalette(colors) {
   const opaque = colors.filter((c) => isOpaque(c.color))
@@ -59,9 +74,15 @@ const sameName = (a, b) => a.trim().toLowerCase() === b.trim().toLowerCase();
 /** The swaps that would put `brand` on a page: { colors: [[from, to]], fonts: [[from, to]] }. */
 export function planBrandSwaps(pageColors, pageFonts, brand) {
   const roles = classifyPalette(pageColors);
-  const colors = COLOR_ROLES
+  const roleSwaps = COLOR_ROLES
     .filter((role) => roles[role] && brand[role] && roles[role] !== brand[role])
     .map((role) => [roles[role], brand[role]]);
+  // Leftover light tints of the old theme (the lavender cast of a purple page) follow the background.
+  const tintSwaps = pageColors
+    .filter((c) => isOpaque(c.color) && c.color !== '#ffffff' && c.color !== roles.background && c.color !== brand.background)
+    .filter((c) => luminance(c.color) >= LIGHT_MIN && saturation(c.color) >= TINT_MIN_SATURATION)
+    .map((c) => [c.color, brand.background]);
+  const colors = [...roleSwaps, ...tintSwaps];
   const targets = [brand.bodyFont, brand.headingFont];
   const fonts = pageFonts.slice(0, 2)
     .map((f, i) => [f.family, targets[i]])
