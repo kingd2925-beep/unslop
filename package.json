@@ -1,0 +1,16 @@
+{
+  "name": "unslop",
+  "version": "0.1.0",
+  "description": "Make any AI-generated website fully editable. Drop in the HTML, edit text, fonts, colours and images, export clean HTML. Runs entirely in your browser.",
+  "type": "module",
+  "private": true,
+  "license": "MIT",
+  "scripts": {
+    "test": "node --test tests/unit/",
+    "test:e2e": "node --test tests/e2e/",
+    "serve": "python3 -m http.server 8765"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.63.0"
+  }
+}
