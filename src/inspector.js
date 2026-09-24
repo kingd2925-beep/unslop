@@ -45,16 +45,19 @@ export function renderInspector(panel, el, { commit, actions }) {
   const cs = doc.defaultView.getComputedStyle(el);
   const setStyle = (prop, value) => { el.style.setProperty(prop, value); commit(); };
 
+  const isPage = el.tagName === 'BODY';
   panel.appendChild(h('div', { class: 'inspector-head' }, [
     h('strong', { text: describe(el) }),
-    h('div', { class: 'button-row' }, [
-      h('button', { type: 'button', title: 'Select the box around this', text: '↑ Parent', onclick: actions.selectParent }),
-      h('button', { type: 'button', title: 'Duplicate', text: 'Duplicate', onclick: actions.duplicate }),
-      h('button', { type: 'button', title: 'Move up', text: '▲', onclick: () => actions.move(-1) }),
-      h('button', { type: 'button', title: 'Move down', text: '▼', onclick: () => actions.move(1) }),
-      h('button', { type: 'button', title: 'Hide this element', text: 'Hide', onclick: actions.hide }),
-      h('button', { type: 'button', class: 'danger', title: 'Delete (Del key)', text: 'Delete', onclick: actions.remove }),
-    ]),
+    isPage
+      ? h('p', { class: 'muted small', text: 'This is the whole page. Change its background and spacing below.' })
+      : h('div', { class: 'button-row' }, [
+        h('button', { type: 'button', title: 'Select the box around this', text: '↑ Parent', onclick: actions.selectParent }),
+        h('button', { type: 'button', title: 'Duplicate', text: 'Duplicate', onclick: actions.duplicate }),
+        h('button', { type: 'button', title: 'Move up', text: '▲', onclick: () => actions.move(-1) }),
+        h('button', { type: 'button', title: 'Move down', text: '▼', onclick: () => actions.move(1) }),
+        h('button', { type: 'button', title: 'Hide this element', text: 'Hide', onclick: actions.hide }),
+        h('button', { type: 'button', class: 'danger', title: 'Delete (Del key)', text: 'Delete', onclick: actions.remove }),
+      ]),
   ]));
 
   if (isTextElement(el) || ['A', 'BUTTON'].includes(el.tagName)) panel.appendChild(textSection(el, cs, setStyle, doc, commit));
