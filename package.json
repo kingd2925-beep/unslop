@@ -6,8 +6,8 @@
   "private": true,
   "license": "MIT",
   "scripts": {
-    "test": "node --test tests/unit/",
-    "test:e2e": "node --test tests/e2e/",
+    "test": "node --test tests/unit/*.test.js",
+    "test:e2e": "node --test --test-concurrency=1 tests/e2e/*.test.js",
     "serve": "python3 -m http.server 8765"
   },
   "devDependencies": {
