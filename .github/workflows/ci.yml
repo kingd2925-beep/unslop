@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Unit tests
+        run: npm test
+      - name: Browser tests (uses the runner's Google Chrome)
+        run: npm run test:e2e
+      - name: Offline build is up to date
+        run: |
+          npm run build
+          git diff --exit-code dist/ || (echo "dist/unslop.html is stale: run npm run build and commit it." && exit 1)
