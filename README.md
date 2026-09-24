@@ -1,10 +1,14 @@
-# unslop
+# unslop · a free visual editor for AI-generated websites
 
 **Your AI made a website. Now make it yours.**
 
-Drop in the HTML that Claude, ChatGPT, Gemini or any AI tool made for you, and edit it like a document:
-click text to type, swap colours and fonts across the whole site, replace images, move and delete
+unslop is a free, open-source **no-code HTML editor** for pages made by AI. Drop in the HTML that Claude,
+ChatGPT, Gemini, v0, Lovable, Bolt or any AI website builder made for you, and edit it like a document:
+click text to type, change colors (colours) and fonts across the whole site, replace images, move and delete
 sections, then download clean HTML. No account, no upload, no build step. It runs entirely in your browser.
+
+**Works with:** Claude artifacts · ChatGPT canvas · Gemini · v0 · Lovable · Bolt · Cursor · Windsurf ·
+Tailwind CDN pages · any static HTML/CSS site or landing page.
 
 **[Open unslop →](https://kingd2925-beep.github.io/unslop/)** &nbsp;·&nbsp;
 **[Download the offline version](https://github.com/kingd2925-beep/unslop/raw/main/dist/unslop.html)** (one file, double-click to open)
@@ -63,6 +67,31 @@ you would in a slide or a doc.
 | Delete / Backspace | Delete the selected element (when not typing) |
 | Esc | Stop typing / clear the selection |
 
+## FAQ
+
+**How do I edit a website that ChatGPT or Claude made, without coding?**
+Copy the HTML the AI gave you, open unslop, press **Paste HTML**, then click any text or element to change it.
+Press **Download page** when you are done.
+
+**How do I change the colors or fonts of an AI-generated landing page?**
+The left panel lists every color and font the page uses. Change one and it updates everywhere on the page.
+Or save your brand once in **My brand** and press **Apply my brand**.
+
+**Can I edit a multi-page site?**
+Yes. Drop several HTML files or the whole folder. Switch pages from the left panel, or in **Preview** by
+clicking your own links.
+
+**Is it free? Do I need an account?**
+It is free and open source (MIT). There is no account and no server. Your files stay on your computer.
+
+**Does it work offline?**
+Yes. Download [`dist/unslop.html`](https://github.com/kingd2925-beep/unslop/raw/main/dist/unslop.html) and
+double-click it.
+
+**How is it different from a website builder like Wix or Webflow?**
+Those build sites inside their platform. unslop edits the HTML file you already have and gives it back to
+you, ready to host anywhere (GitHub Pages, Netlify, Vercel, your own server).
+
 ## Privacy and safety
 
 - **Nothing leaves your computer.** There is no server. Your pages are read and saved by your own browser.
@@ -96,6 +125,9 @@ npm run serve        # serves the editor at http://localhost:8765
 | `tests/unit/` | Pure-logic tests (colours, theme swaps, brand roles, undo, zip). |
 | `tests/e2e/` | Browser tests, including the security checks and the offline build. |
 | `scripts/` | `build.mjs` (single-file build) and `screenshots.mjs`. |
+
+A ready GitHub Actions workflow that runs all of the above lives in `docs/ci-workflow.yml`
+(copy it to `.github/workflows/ci.yml` to switch it on).
 
 Contributions are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) first.
 
