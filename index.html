@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>unslop · make any AI-generated website editable</title>
+  <meta name="description" content="Drop in the HTML your AI made and edit it like a document: text, fonts, colours, images and pages. Runs entirely in your browser.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%237c3aed'/%3E%3Cpath d='M18 20v14a14 14 0 0 0 28 0V20' fill='none' stroke='white' stroke-width='7' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles/app.css">
+</head>
+<body data-mode="edit">
+  <header class="topbar">
+    <a class="brand" href="./" aria-label="unslop home"><span class="brand-mark" aria-hidden="true">u</span> unslop</a>
+    <div class="toolbar" role="toolbar" aria-label="Editor tools">
+      <div class="group">
+        <button type="button" data-action="open-files" title="Open HTML files (also CSS, JS and images next to them)">Open</button>
+        <button type="button" data-action="open-folder" title="Open a whole website folder">Folder</button>
+        <button type="button" data-action="paste" title="Paste HTML code">Paste</button>
+      </div>
+      <div class="group segmented project-only" role="group" aria-label="Mode">
+        <button type="button" data-mode="edit" aria-pressed="true" title="Click things to change them">Edit</button>
+        <button type="button" data-mode="preview" aria-pressed="false" title="Use the site like a visitor. Links switch pages.">Preview</button>
+      </div>
+      <div class="group segmented project-only" role="group" aria-label="Screen size">
+        <button type="button" data-device="desktop" aria-pressed="true" title="Desktop width">Desktop</button>
+        <button type="button" data-device="tablet" aria-pressed="false" title="Tablet width">Tablet</button>
+        <button type="button" data-device="mobile" aria-pressed="false" title="Phone width">Phone</button>
+      </div>
+      <div class="group project-only">
+        <button type="button" id="undo" title="Undo (Ctrl/Cmd + Z)" disabled>↶ Undo</button>
+        <button type="button" id="redo" title="Redo (Ctrl/Cmd + Shift + Z)" disabled>↷ Redo</button>
+      </div>
+      <div class="group project-only">
+        <button type="button" id="export-page" class="primary" title="Download this page (Ctrl/Cmd + S)">Download page</button>
+        <button type="button" id="export-all" title="Download every page (a .zip when there are several)">All pages</button>
+        <button type="button" id="copy-html" title="Copy this page's HTML">Copy HTML</button>
+      </div>
+      <button type="button" id="hint-show" class="ghost" title="Show tips">?</button>
+      <a class="ghost github" href="https://github.com/" id="github-link" target="_blank" rel="noopener">GitHub</a>
+    </div>
+  </header>
+
+  <div id="hint" class="hint" role="note">
+    <span><b>Switching pages:</b> click <b>Preview</b>, click the page link on your site, then click <b>Edit</b> to change that page.
+    Several pages inside one file (tabs, steps)? Turn on <b>Show hidden parts</b> on the left.</span>
+    <button type="button" id="hint-close" aria-label="Hide this tip">×</button>
+  </div>
+
+  <main class="workspace">
+    <aside class="sidebar left project-only" aria-label="Pages and theme">
+      <section>
+        <h2>Pages</h2>
+        <ul id="pages-list" class="pages-list"></ul>
+        <button type="button" data-action="open-files" class="link-button">+ Add pages</button>
+      </section>
+      <section>
+        <h2>Theme</h2>
+        <div id="brand" class="brand-host"></div>
+        <p class="muted small">Change a colour or font once, and it changes everywhere.</p>
+        <div id="theme"></div>
+      </section>
+      <section>
+        <h2>Sections</h2>
+        <div id="sections"></div>
+      </section>
+    </aside>
+
+    <div id="stage" class="stage">
+      <div id="welcome" class="welcome">
+        <h1>Your AI made a website.<br>Now make it yours.</h1>
+        <p class="lead">Drop in any HTML page made with Claude, ChatGPT, Gemini, Lovable, v0, Bolt or any other AI tool.
+          Click to change text, fonts, colours and images, then download clean HTML.</p>
+        <div class="dropzone">
+          <p class="dropzone-title">Drop HTML files or a whole website folder here</p>
+          <div class="button-row center">
+            <button type="button" class="primary" data-action="open-files">Open files</button>
+            <button type="button" data-action="open-folder">Open folder</button>
+            <button type="button" data-action="paste">Paste HTML</button>
+            <button type="button" data-action="sample">Try an example</button>
+          </div>
+          <button type="button" id="restore" class="link-button" hidden>Restore last session</button>
+        </div>
+        <ol class="steps">
+          <li><b>Drop</b> your AI-made page (or paste its code).</li>
+          <li><b>Click</b> anything to edit it. Swap colours and fonts site-wide on the left.</li>
+          <li><b>Download</b> clean HTML, ready to host anywhere.</li>
+        </ol>
+        <p class="privacy">🔒 Runs 100% in your browser. Your files never leave your computer.</p>
+      </div>
+    </div>
+
+    <aside id="inspector" class="sidebar right project-only" aria-label="Selected element"></aside>
+  </main>
+
+  <div id="drop-overlay" class="drop-overlay" hidden><p>Drop to open</p></div>
+  <div id="toasts" class="toasts" aria-live="polite"></div>
+
+  <dialog id="paste-dialog">
+    <form id="paste-form" method="dialog">
+      <h2>Paste your HTML</h2>
+      <p class="muted">Copy the full code of your page (from Claude, ChatGPT or any tool) and paste it here.</p>
+      <textarea id="paste-text" rows="14" spellcheck="false" placeholder="<!DOCTYPE html> …"></textarea>
+      <div class="button-row end">
+        <button type="submit" value="cancel">Cancel</button>
+        <button type="submit" value="open" class="primary">Open</button>
+      </div>
+    </form>
+  </dialog>
+
+  <input type="file" id="file-input" class="visually-hidden" multiple accept=".html,.htm,.css,.js,.mjs,image/*" tabindex="-1" aria-hidden="true">
+  <input type="file" id="folder-input" class="visually-hidden" webkitdirectory multiple tabindex="-1" aria-hidden="true">
+
+  <noscript><p class="noscript">unslop needs JavaScript to run. Everything stays in your browser.</p></noscript>
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
