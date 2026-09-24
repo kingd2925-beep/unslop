@@ -2,20 +2,27 @@
 
 import { h, clear, field, toast } from './ui.js';
 import { COLOR_ROLES, sanitizeBrand, brandFromPage } from './brand.js';
-import { loadBrandData, saveBrandData } from './persist.js';
+import { loadBrandData, saveBrandData, isOfflineFile } from './persist.js';
 import { FONT_LIBRARY } from './fonts.js';
 import { downloadText } from './exporter.js';
 
 const ROLE_LABELS = { background: 'Background', text: 'Text', accent: 'Main accent', accent2: 'Second accent' };
 const MAX_IMPORT_BYTES = 20000;
 
+// When the brand cannot be stored (offline file, blocked storage) it is kept for this tab only.
+let tabBrand = null;
+
 export function currentBrand() {
   const data = loadBrandData();
-  return data ? sanitizeBrand(data) : null;
+  return data ? sanitizeBrand(data) : tabBrand;
 }
 
 function persist(brand) {
-  if (!saveBrandData(brand)) toast('Your browser blocked saving. Export the brand file to keep it.', 'warn');
+  tabBrand = brand;
+  if (saveBrandData(brand)) return;
+  toast(isOfflineFile()
+    ? 'Offline file: your brand is kept until you close this tab. Press Export to save it as a file.'
+    : 'Your browser blocked saving. Press Export to keep your brand as a file.', 'warn');
 }
 
 function fontSelect(value, onChange) {

@@ -394,9 +394,17 @@ function newToken() {
   return [...bytes].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
+// Pages being edited or previewed never need these; denying them stops a hostile page from
+// raising permission prompts that look like they come from the editor.
+const DENIED_FEATURES = [
+  'camera', 'microphone', 'geolocation', 'clipboard-read', 'clipboard-write', 'display-capture',
+  'payment', 'usb', 'serial', 'hid', 'bluetooth', 'midi', 'publickey-credentials-get', 'screen-wake-lock',
+].map((f) => `${f} 'none'`).join('; ');
+
 function makeFrame(sandbox, title) {
   const frame = document.createElement('iframe');
   frame.setAttribute('sandbox', sandbox);
+  frame.setAttribute('allow', DENIED_FEATURES);
   frame.setAttribute('title', title);
   frame.setAttribute('referrerpolicy', 'no-referrer');
   return frame;
@@ -1469,17 +1477,23 @@ function brandFromPage(pageColors, pageFonts) {
 
 // ---- src/persist.js
 // Autosave to this browser only. Nothing is ever sent anywhere.
+// Opened as a file (file://), Chrome gives every local HTML file the same storage, so any other
+// file the person double-clicks could read it. The offline build therefore never persists anything.
 
 
 const PROJECT_KEY = 'unslop:project:v1';
 
+const isOfflineFile = () => typeof location !== 'undefined' && location.protocol === 'file:';
+
 function saveProject(pages, current) {
+  if (isOfflineFile()) return false;
   const payload = JSON.stringify({ savedAt: new Date().toISOString(), current, pages: pages.map(({ name, html }) => ({ name, html })) });
   return storageSet(PROJECT_KEY, payload);
 }
 
 /** The last session, or null. Anything malformed is treated as no session. */
 function loadProject() {
+  if (isOfflineFile()) return null;
   const raw = storageGet(PROJECT_KEY);
   if (!raw) return null;
   try {
@@ -1501,12 +1515,13 @@ const BRAND_KEY = 'unslop:brand:v1';
 
 /** The saved brand kit as raw data (sanitise before use), or null. */
 function loadBrandData() {
+  if (isOfflineFile()) return null;
   const raw = storageGet(BRAND_KEY);
   if (!raw) return null;
   try { return JSON.parse(raw); } catch { return null; }
 }
 
-const saveBrandData = (brand) => storageSet(BRAND_KEY, JSON.stringify(brand));
+const saveBrandData = (brand) => !isOfflineFile() && storageSet(BRAND_KEY, JSON.stringify(brand));
 
 // ---- src/brand-panel.js
 // The "My brand" card: save your own colours and fonts once, apply them to any AI-made page in one click.
@@ -1519,13 +1534,20 @@ const saveBrandData = (brand) => storageSet(BRAND_KEY, JSON.stringify(brand));
 const ROLE_LABELS = { background: 'Background', text: 'Text', accent: 'Main accent', accent2: 'Second accent' };
 const MAX_IMPORT_BYTES = 20000;
 
+// When the brand cannot be stored (offline file, blocked storage) it is kept for this tab only.
+let tabBrand = null;
+
 function currentBrand() {
   const data = loadBrandData();
-  return data ? sanitizeBrand(data) : null;
+  return data ? sanitizeBrand(data) : tabBrand;
 }
 
 function persist(brand) {
-  if (!saveBrandData(brand)) toast('Your browser blocked saving. Export the brand file to keep it.', 'warn');
+  tabBrand = brand;
+  if (saveBrandData(brand)) return;
+  toast(isOfflineFile()
+    ? 'Offline file: your brand is kept until you close this tab. Press Export to save it as a file.'
+    : 'Your browser blocked saving. Press Export to keep your brand as a file.', 'warn');
 }
 
 function fontSelect(value, onChange) {
@@ -1698,7 +1720,9 @@ function createApp(els) {
     saveTimer = setTimeout(() => {
       if (!saveProject(pages, current) && !saveWarned) {
         saveWarned = true;
-        toast('Autosave is off here (browser storage is full or blocked). Download your work to keep it.', 'warn');
+        toast(isOfflineFile()
+          ? 'Offline file: autosave is off to keep your work private from other files on this computer. Download your work to keep it.'
+          : 'Autosave is off here (browser storage is full or blocked). Download your work to keep it.', 'warn');
       }
     }, SAVE_DELAY_MS);
   }

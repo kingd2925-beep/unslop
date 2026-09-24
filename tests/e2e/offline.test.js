@@ -33,6 +33,10 @@ test('the single-file build works when opened straight from disk', async () => {
   const [download] = await Promise.all([page.waitForEvent('download'), page.click('#export-page')]);
   const html = await readFile(await download.path(), 'utf8');
   assert.match(html, /<h1>Offline works<\/h1>/);
+  // file:// shares storage with every local HTML file, so the offline build must never autosave there.
+  await page.waitForTimeout(1200);
+  const stored = await page.evaluate(() => Object.keys(localStorage).filter((k) => k.startsWith('unslop:project') || k.startsWith('unslop:brand')));
+  assert.deepEqual(stored, []);
   assert.deepEqual(errors, []);
   await context.close();
 });

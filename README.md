@@ -35,7 +35,7 @@ you would in a slide or a doc.
 - **Tailwind-CDN pages** keep their styling while you edit.
 - **Desktop, tablet and phone widths** to check your layout.
 - **Download** one page as `.html`, all pages as `website.zip`, or copy the HTML.
-- **Autosave** in your browser, with *Restore last session* on the start screen.
+- **Autosave** in your browser, with *Restore last session* on the start screen (online version; the offline file deliberately saves nothing, see [SECURITY.md](SECURITY.md)).
 - **Fonts for everyone,** including Hindi and Devanagari faces (Hind, Mukta, Noto Sans Devanagari, Tiro Devanagari Hindi).
 
 ![Applying a saved brand to an AI-made page](docs/brand-applied.png)

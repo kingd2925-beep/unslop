@@ -15,6 +15,22 @@ unslop opens HTML that you did not write, so it treats every page as untrusted.
 - No data is sent anywhere by unslop. Pages you open may still load their own resources (fonts, images,
   scripts from CDNs) when previewed, exactly as they would in any browser.
 
+- Every frame also denies camera, microphone, location, clipboard, screen capture, payment and device
+  access (`allow="… 'none'"`), so a page cannot raise permission prompts that look like they come from unslop.
+
+## What is stored, and where
+
+- **Online** (`kingd2925-beep.github.io/unslop`), unslop autosaves your pages and your brand kit in this
+  browser's `localStorage`. Browsers share that storage across a whole site origin, and every GitHub Pages
+  project under the same account shares the `kingd2925-beep.github.io` origin. So keep in mind that other
+  pages on that origin could read it. It holds page HTML and colours only: never passwords or keys.
+- **Offline file** (`dist/unslop.html` opened from disk): Chrome gives every local HTML file the same
+  storage, so any other file you double-click could read it. The offline version therefore **saves nothing**:
+  no autosave, and your brand kit lasts only until the tab closes. Use **Download** and the brand **Export**
+  button to keep your work.
+- When you preview a page, it loads its own images, fonts and scripts like any web page, and those servers
+  may see where the request came from (the referrer). The Google Fonts link unslop adds behaves the same way.
+
 ## Why there is no Content-Security-Policy
 
 `srcdoc` frames inherit the parent page's CSP. A strict policy on the editor would also apply to the pages

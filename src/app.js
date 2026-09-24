@@ -12,7 +12,7 @@ import { planBrandSwaps, classifyPalette } from './brand.js';
 import { renderBrandCard } from './brand-panel.js';
 import { ensureFontLink, fontStack } from './fonts.js';
 import { resolvePageLink, uniquePageName } from './pages.js';
-import { saveProject } from './persist.js';
+import { saveProject, isOfflineFile } from './persist.js';
 import { h, clear, toast } from './ui.js';
 
 const JS_RENDERED = { maxStaticText: 20, minRenderedText: 100 };
@@ -51,7 +51,9 @@ export function createApp(els) {
     saveTimer = setTimeout(() => {
       if (!saveProject(pages, current) && !saveWarned) {
         saveWarned = true;
-        toast('Autosave is off here (browser storage is full or blocked). Download your work to keep it.', 'warn');
+        toast(isOfflineFile()
+          ? 'Offline file: autosave is off to keep your work private from other files on this computer. Download your work to keep it.'
+          : 'Autosave is off here (browser storage is full or blocked). Download your work to keep it.', 'warn');
       }
     }, SAVE_DELAY_MS);
   }

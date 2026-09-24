@@ -22,9 +22,17 @@ function newToken() {
   return [...bytes].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
+// Pages being edited or previewed never need these; denying them stops a hostile page from
+// raising permission prompts that look like they come from the editor.
+const DENIED_FEATURES = [
+  'camera', 'microphone', 'geolocation', 'clipboard-read', 'clipboard-write', 'display-capture',
+  'payment', 'usb', 'serial', 'hid', 'bluetooth', 'midi', 'publickey-credentials-get', 'screen-wake-lock',
+].map((f) => `${f} 'none'`).join('; ');
+
 function makeFrame(sandbox, title) {
   const frame = document.createElement('iframe');
   frame.setAttribute('sandbox', sandbox);
+  frame.setAttribute('allow', DENIED_FEATURES);
   frame.setAttribute('title', title);
   frame.setAttribute('referrerpolicy', 'no-referrer');
   return frame;
